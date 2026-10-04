@@ -159,9 +159,42 @@ def test_vlm_uses_annotated_boundary_frames_and_caches_json(tmp_path):
 
     assert first == second
     assert client.calls == 1
+    assert first["status"] == "ok"
+    assert first["result"]["posture"] == "unknown"
     assert len(client.received_frames) == 5
     assert client.received_frames[0].timestamp_sec == 0
     assert client.received_frames[-1].timestamp_sec == 2
     assert all(frame.jpeg_bytes.startswith(b"\xff\xd8") for frame in client.received_frames)
     assert json.loads(next(cache.glob("*.json")).read_text()) == first
     assert fps == 2
+
+
+def test_vlm_returns_unavailable_tool_result_without_raising(tmp_path):
+    video_path = tmp_path / "clip.mp4"
+    make_test_video(video_path)
+
+    class OfflineVLM:
+        model = "offline-test"
+
+        def describe(self, frames, prompt):
+            raise RuntimeError("Not used")
+
+    class UnavailableVLM(OfflineVLM):
+        def describe(self, frames, prompt):
+            from src.vlm import VLMUnavailableError
+
+            raise VLMUnavailableError("local VLM server is unavailable")
+
+    result = vlm_describe_clip(
+        0,
+        1,
+        "Describe posture.",
+        client=UnavailableVLM(),
+        config={"agent": {"vlm_frames": 2}, "bed_polygon": []},
+        video_path=video_path,
+        cache_dir=tmp_path / "cache",
+    )
+
+    assert result["status"] == "vlm_unavailable"
+    assert result["result"]["posture"] == "unknown"
+    assert result["result"]["confidence"] == 0

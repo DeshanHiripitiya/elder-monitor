@@ -44,10 +44,12 @@ class MockVLM:
     def describe(self, frames: list[VLMFrame], prompt: str) -> str:
         return json.dumps(
             {
-                "description": "Mock response; no model inference was performed.",
-                "frame_count": len(frames),
-                "timestamps_sec": [frame.timestamp_sec for frame in frames],
-                "question": prompt,
+                "patient_visible": False,
+                "location": "not_visible",
+                "posture": "unknown",
+                "other_person_present": False,
+                "confidence": 0,
+                "evidence": "Mock response; no model inference was performed.",
             }
         )
 
@@ -241,6 +243,7 @@ def _annotated_frames(
     t1: float,
     frame_count: int,
     bed_polygon: list[list[float]],
+    brightness_factor: float,
 ) -> list[VLMFrame]:
     capture = cv2.VideoCapture(str(video_path))
     if not capture.isOpened():
@@ -274,7 +277,7 @@ def _annotated_frames(
             ok, frame = capture.read()
             if not ok:
                 raise RuntimeError(
-                    f"Unable to read video frame {frame_index} at {timestamp:.3f}s"
+                    f"Unable to read video frame {frame_index}"
                 )
             actual_time = frame_index / fps
             if len(polygon) >= 3:
@@ -282,9 +285,11 @@ def _annotated_frames(
                     frame,
                     [polygon.reshape((-1, 1, 2))],
                     isClosed=True,
-                    color=(0, 255, 255),
+                    color=(0, 0, 255),
                     thickness=max(2, frame.shape[1] // 800),
                 )
+            if brightness_factor < 1:
+                frame = cv2.convertScaleAbs(frame, alpha=brightness_factor, beta=0)
             cv2.putText(
                 frame,
                 f"t={actual_time:.2f}s",
@@ -314,6 +319,7 @@ def _cache_key(
     model: str,
     frame_count: int,
     bed_polygon: list[list[float]],
+    brightness_factor: float,
 ) -> str:
     stat = video_path.stat()
     identity = {
@@ -326,6 +332,7 @@ def _cache_key(
         "model": model,
         "vlm_frames": frame_count,
         "bed_polygon": bed_polygon,
+        "brightness_factor": brightness_factor,
     }
     encoded = json.dumps(identity, sort_keys=True, separators=(",", ":")).encode()
     return hashlib.sha256(encoded).hexdigest()
@@ -341,8 +348,15 @@ def vlm_describe_clip(
     config_path: str | Path = DEFAULT_CONFIG,
     video_path: str | Path | None = None,
     cache_dir: str | Path | None = None,
+    brightness_factor: float = 1.0,
 ) -> dict[str, Any]:
-    """Describe cached source-video frames via an injected, cacheable VLM client."""
+    """Describe cached source-video frames via a validated, cacheable VLM call."""
+    from src.vlm import (
+        VLMUnavailableError,
+        parse_and_validate_vlm_json,
+        unknown_vlm_result,
+    )
+
     config_file = Path(config_path).resolve()
     if config is None:
         config = load_config(config_file)
@@ -350,6 +364,9 @@ def vlm_describe_clip(
     source = _resolve_path(source, config_file).resolve()
     frame_count = int(config["agent"]["vlm_frames"])
     bed_polygon = config.get("bed_polygon", [])
+    brightness_factor = float(brightness_factor)
+    if not math.isfinite(brightness_factor) or not 0 < brightness_factor <= 1:
+        raise ValueError("brightness_factor must be greater than 0 and at most 1")
     cache_root = (
         Path(cache_dir)
         if cache_dir is not None
@@ -365,6 +382,7 @@ def vlm_describe_clip(
         client.model,
         frame_count,
         bed_polygon,
+        brightness_factor,
     )
     cache_file = cache_root / f"{cache_key}.json"
     if cache_file.exists():
@@ -376,27 +394,68 @@ def vlm_describe_clip(
         float(t1),
         frame_count,
         bed_polygon,
+        brightness_factor,
+    )
+    lighting_note = (
+        "This sample is brightness-reduced for a simulated low-light robustness "
+        "check; the source scene itself may not be dim."
+        if brightness_factor < 1
+        else ""
     )
     prompt = (
-        f"{question}\n\n"
-        "Return only a JSON object matching the requested response schema. "
-        "The attached frames are in chronological order. Each frame has the "
-        "bed polygon overlay and source timestamp."
+        f"These are {len(frames)} frames from a fixed camera, in time order, "
+        "with timestamps. The red polygon is the bed. Describe ONLY the "
+        "elderly patient. Ignore any other person when describing "
+        "posture/location, but report whether another person is present.\n"
+        f"{lighting_note}\n"
+        f"Answer this narrow question: {question}\n"
+        "Reply with JSON only, using exactly this schema:\n"
+        '{"patient_visible": true, '
+        '"location": "on_bed|beside_bed|floor|chair|elsewhere|not_visible", '
+        '"posture": "lying|sitting|standing|walking|unknown", '
+        '"other_person_present": false, "confidence": 0.0, '
+        '"evidence": "one short sentence"}\n'
+        'If you cannot tell, use "unknown" or "not_visible". Do not guess. '
+        "Use a boolean for the two boolean fields and a numeric confidence "
+        "between 0 and 1."
     )
-    raw_response = client.describe(frames, prompt)
-    try:
-        response = json.loads(raw_response)
-    except json.JSONDecodeError as error:
-        raise ValueError("VLM client must return a JSON object string") from error
-    if not isinstance(response, dict):
-        raise ValueError("VLM client response must be a JSON object")
+    response: dict[str, Any] | None = None
+    validation_error = ""
+    for attempt in range(2):
+        attempt_prompt = prompt
+        if attempt:
+            attempt_prompt += (
+                "\nYour previous response failed JSON/schema validation: "
+                f"{validation_error}. Retry once. Return only the exact JSON object."
+            )
+        try:
+            response = parse_and_validate_vlm_json(
+                client.describe(frames, attempt_prompt)
+            )
+            break
+        except ValueError as error:
+            validation_error = str(error)
+        except VLMUnavailableError as error:
+            return {
+                "status": "vlm_unavailable",
+                "result": unknown_vlm_result(),
+                "error": str(error),
+            }
+
+    if response is None:
+        return {
+            "status": "invalid_response",
+            "result": unknown_vlm_result(),
+            "error": validation_error,
+        }
+    result = {"status": "ok", "result": response}
 
     cache_root.mkdir(parents=True, exist_ok=True)
-    temp_file = cache_file.with_suffix(f".{id(response)}.tmp")
+    temp_file = cache_file.with_suffix(f".{id(result)}.tmp")
     try:
-        temp_file.write_text(json.dumps(response, indent=2) + "\n", encoding="utf-8")
+        temp_file.write_text(json.dumps(result, indent=2) + "\n", encoding="utf-8")
         temp_file.replace(cache_file)
     finally:
         if temp_file.exists():
             temp_file.unlink()
-    return response
+    return result

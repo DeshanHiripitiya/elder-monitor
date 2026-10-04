@@ -433,10 +433,10 @@ All thresholds and call budgets live under `agent` in
 [`config.yaml`](config.yaml); the same agent settings are available in
 [`config_demo.yaml`](config_demo.yaml). The target execution order is
 state-history lookup, pose-feature lookup, wider temporal context, then a
-budgeted VLM call only when cheaper evidence has not resolved the case. The
-VLM executor and its call-rate measurement are not implemented in this
-trigger-inventory step, so no “8% of segments” call rate is claimed yet.
-Future evaluation should compute that percentage from actual call records.
+budgeted local VLM call only when cheaper evidence has not resolved the case.
+The case-routing loop and call-rate measurement are not yet connected, so no
+“8% of segments” call rate is claimed. Future evaluation should compute that
+percentage from actual routing and call records.
 
 ### Cached-data tools and real-video smoke test
 
@@ -456,9 +456,9 @@ The four read-only agent tools are implemented in
   question, model, frame count, and polygon.
 
 The VLM call uses the provider-neutral `VLMClient` interface. `MockVLM` is
-available for tests and offline checks. No paid or external provider has been
-selected or implemented yet; the real-video smoke test therefore uses actual
-video frames but a mocked VLM response.
+available for tests, and the local Ollama client is implemented in
+[`src/vlm.py`](src/vlm.py). See the constrained prompt and real-video
+evaluation below.
 
 Run the unit tests:
 
@@ -479,3 +479,49 @@ and forward window extension, and decodes annotated frames from the configured
 source video. Adjust the real-data window with `--start` and `--end`. It makes
 no external VLM request. Its first run writes a reusable mock-response entry
 under `.cache/agent_vlm/`.
+
+### Constrained local VLM and real-video evaluation
+
+The local Ollama backend runs at temperature 0 and receives the fixed-camera
+frames in timestamp order. The prompt asks only about the elderly patient,
+instructs the model to ignore other people and avoid guessing, and requires
+the response fields `patient_visible`, `location`, `posture`,
+`other_person_present`, `confidence`, and `evidence`. The bed polygon is
+rendered in red and every frame carries its source timestamp.
+
+The response is parsed and schema-validated. Invalid JSON or schema is retried
+once; if the retry is still invalid, the tool returns an `invalid_response`
+result with unknown posture and zero confidence. Connection, timeout, and
+local API errors return a `vlm_unavailable` tool result with the same safe
+unknown fallback. The agent can therefore continue without treating a VLM
+failure as a successful description.
+
+This project uses local footage only with the local Ollama provider. Install
+Ollama separately, then download the configured vision model locally:
+
+```powershell
+ollama pull qwen2.5vl:7b
+```
+
+Start Ollama if it is not already running, then evaluate the ten fixed windows
+in [`scenarios/vlm_eval_windows.json`](scenarios/vlm_eval_windows.json):
+
+```powershell
+.\.venv\Scripts\python.exe tools\evaluate_vlm.py --overwrite
+```
+
+The evaluator verifies every expected posture label against the overlapping
+intervals in `data/raw/gt.csv`, reports the correct count and accuracy over
+successful real model responses, and writes per-window results to
+`data/processed/vlm_eval_results.json`. It also reports unavailable and
+invalid responses separately; those are not counted as model answers. Use
+`--mock-vlm` only to check data/frame plumbing—mock results are excluded from
+accuracy.
+
+Two windows show the patient under a blanket. The supplied clip has no
+independently labeled naturally dim-light interval, so the tenth case
+brightness-reduces a real labeled frame to 45% for a **simulated low-light
+robustness check**. This is labeled as an augmentation, not claimed as
+naturally dim footage. The score evaluates posture against the state labels;
+location and identity remain qualitative outputs because `gt.csv` does not
+annotate those fields.

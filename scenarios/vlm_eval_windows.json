@@ -1,0 +1,86 @@
+{
+  "description": "Ten posture-labelled windows for a local VLM mini-evaluation. Posture labels come from data/raw/gt.csv. The final case is a brightness-reduced low-light robustness check, not naturally dim source footage.",
+  "windows": [
+    {
+      "id": "posture-01-standing",
+      "start": 2,
+      "end": 8,
+      "ground_truth_state": "STANDING",
+      "expected_posture": "standing",
+      "tags": []
+    },
+    {
+      "id": "posture-02-sitting",
+      "start": 10.5,
+      "end": 14.5,
+      "ground_truth_state": "SITTING_ON_BED",
+      "expected_posture": "sitting",
+      "tags": []
+    },
+    {
+      "id": "posture-03-lying-blanket",
+      "start": 42,
+      "end": 48,
+      "ground_truth_state": "LYING_IN_BED",
+      "expected_posture": "lying",
+      "tags": ["blanket"]
+    },
+    {
+      "id": "posture-04-lying-blanket",
+      "start": 68,
+      "end": 74,
+      "ground_truth_state": "LYING_IN_BED",
+      "expected_posture": "lying",
+      "tags": ["blanket"]
+    },
+    {
+      "id": "posture-05-sitting",
+      "start": 94,
+      "end": 100,
+      "ground_truth_state": "SITTING_ON_BED",
+      "expected_posture": "sitting",
+      "tags": []
+    },
+    {
+      "id": "posture-06-lying",
+      "start": 110,
+      "end": 116,
+      "ground_truth_state": "LYING_IN_BED",
+      "expected_posture": "lying",
+      "tags": []
+    },
+    {
+      "id": "posture-07-sitting",
+      "start": 124,
+      "end": 130,
+      "ground_truth_state": "SITTING_ON_BED",
+      "expected_posture": "sitting",
+      "tags": []
+    },
+    {
+      "id": "posture-08-standing",
+      "start": 180,
+      "end": 186,
+      "ground_truth_state": "STANDING",
+      "expected_posture": "standing",
+      "tags": []
+    },
+    {
+      "id": "posture-09-walking",
+      "start": 204,
+      "end": 210,
+      "ground_truth_state": "WALKING",
+      "expected_posture": "walking",
+      "tags": []
+    },
+    {
+      "id": "posture-10-dim-light-stress",
+      "start": 380,
+      "end": 386,
+      "ground_truth_state": "LYING_IN_BED",
+      "expected_posture": "lying",
+      "tags": ["simulated_dim_light"],
+      "brightness_factor": 0.45
+    }
+  ]
+}
