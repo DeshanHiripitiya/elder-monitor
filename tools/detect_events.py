@@ -41,7 +41,10 @@ def main() -> None:
     features = pd.read_parquet(features_path)
     events = detect_exits(segments, features, config)
     summary: dict[str, Any] = {
-        "event_counts": {"bed_exit": sum(event["type"] == "bed_exit" for event in events)},
+        "event_counts": {
+            "bed_exit": sum(event["type"] == "bed_exit" for event in events),
+            "bed_return": sum(event["type"] == "bed_return" for event in events),
+        },
         "events": events,
         "configuration": config["events"],
     }

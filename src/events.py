@@ -17,8 +17,11 @@ def detect_exits(
     in_bed_states = set(config["in_bed_states"])
     away_seconds = float(event_config["exit_away_sec"])
     away_distance = float(event_config["exit_away_dist"])
+    return_approach_distance = float(event_config["return_approach_dist"])
     unknown_hold = float(event_config["unknown_hold_sec"])
     out_of_view_seconds = float(event_config["out_of_view_exit_sec"])
+    return_sit_seconds = float(event_config["return_sit_sec"])
+    return_lie_seconds = float(event_config["return_lie_sec"])
 
     ordered = sorted(segments, key=lambda segment: float(segment["start"]))
     frames = features.sort_values("t").reset_index(drop=True)
@@ -39,6 +42,9 @@ def detect_exits(
     unknown_duration = 0.0
     away_start: float | None = None
     out_of_view_start: float | None = None
+    approach_start: float | None = None
+    sit_start: float | None = None
+    lie_start: float | None = None
 
     for row in frames.itertuples(index=False):
         row_time = float(row.t)
@@ -50,6 +56,70 @@ def detect_exits(
         segment = ordered[segment_index]
         state = str(segment["state"])
         next_time = row_time + step
+        distance = float(row.dist_to_bed) if pd.notna(row.dist_to_bed) else 0.0
+
+        if phase == "OUT":
+            if not bool(row.present):
+                continue
+            if state == "UNKNOWN":
+                continue
+            if distance > return_approach_distance:
+                continue
+            phase = "APPROACH"
+            approach_start = row_time
+            sit_start = None
+            lie_start = None
+
+        if phase in {"APPROACH", "SIT"}:
+            if not bool(row.present):
+                phase = "OUT"
+                approach_start = None
+                sit_start = None
+                lie_start = None
+                continue
+            if state == "UNKNOWN":
+                continue
+            if distance > return_approach_distance:
+                phase = "OUT"
+                approach_start = None
+                sit_start = None
+                lie_start = None
+                continue
+            if state in {"STANDING", "WALKING"}:
+                phase = "OUT"
+                approach_start = None
+                sit_start = None
+                lie_start = None
+                continue
+            if phase == "APPROACH":
+                if state == "SITTING_ON_BED":
+                    sit_start = row_time if sit_start is None else sit_start
+                    if next_time - sit_start >= return_sit_seconds:
+                        phase = "SIT"
+                continue
+            if state == "SITTING_ON_BED":
+                lie_start = None
+                continue
+            if state == "LYING_IN_BED":
+                lie_start = row_time if lie_start is None else lie_start
+                if next_time - lie_start >= return_lie_seconds:
+                    events.append(
+                        {
+                            "type": "bed_return",
+                            "start_time": approach_start,
+                            "confirmed_time": row_time,
+                            "previous_state": "OUT",
+                            "current_state": "LYING_IN_BED",
+                            "confidence": float(segment["mean_confidence"]),
+                        }
+                    )
+                    phase = "IN_BED"
+                    last_in_bed_end = next_time
+                    previous_in_bed_state = "LYING_IN_BED"
+                    approach_start = None
+                    sit_start = None
+                    lie_start = None
+                continue
 
         if state in in_bed_states:
             phase = "IN_BED"
@@ -108,7 +178,6 @@ def detect_exits(
             continue
 
         out_of_view_start = None
-        distance = float(row.dist_to_bed) if pd.notna(row.dist_to_bed) else 0.0
         if distance >= away_distance:
             away_start = row_time if away_start is None else away_start
             if next_time - away_start >= away_seconds:

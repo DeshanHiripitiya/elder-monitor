@@ -10,6 +10,7 @@ CONFIG = {
     "events": {
         "exit_away_sec": 4,
         "exit_away_dist": 0.8,
+        "return_approach_dist": 0.8,
         "unknown_hold_sec": 4,
         "return_sit_sec": 2,
         "return_lie_sec": 5,
@@ -79,6 +80,42 @@ class ExitDetectionTests(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["confidence"], "low")
         self.assertEqual(result[0]["note"], "via_out_of_view")
+
+    def test_exit_then_return_confirms_bed_return(self):
+        states = (
+            ["LYING_IN_BED"]
+            + ["STANDING"] * 5
+            + ["STANDING"]
+            + ["SITTING_ON_BED"] * 2
+            + ["LYING_IN_BED"] * 5
+        )
+        distances = [0.0] + [1.0] * 5 + [0.5] * 8
+        result = detect_exits(
+            segments(states),
+            frames(states, distances),
+            CONFIG,
+        )
+        self.assertEqual(
+            [event["type"] for event in result],
+            ["bed_exit", "bed_return"],
+        )
+        self.assertEqual(result[1]["previous_state"], "OUT")
+        self.assertEqual(result[1]["current_state"], "LYING_IN_BED")
+
+    def test_sitting_then_walking_does_not_confirm_return(self):
+        states = (
+            ["LYING_IN_BED"]
+            + ["STANDING"] * 5
+            + ["SITTING_ON_BED"] * 3
+            + ["WALKING"] * 3
+        )
+        distances = [0.0] + [1.0] * 5 + [0.5] * 6
+        result = detect_exits(
+            segments(states),
+            frames(states, distances),
+            CONFIG,
+        )
+        self.assertEqual([event["type"] for event in result], ["bed_exit"])
 
 
 if __name__ == "__main__":

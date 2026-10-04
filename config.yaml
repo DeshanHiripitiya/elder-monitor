@@ -29,6 +29,7 @@ in_bed_states:
 events:
   exit_away_sec: 4
   exit_away_dist: 0.8
+  return_approach_dist: 0.8
   unknown_hold_sec: 4
   return_sit_sec: 2
   return_lie_sec: 5

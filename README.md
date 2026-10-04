@@ -156,6 +156,19 @@ panel around each event. The panel shows the event type, `CANDIDATE` or
 event confidence, and optional notes. It remains visible for five seconds
 after confirmation. Use `--events` to provide a different event JSON file.
 
+An already-rendered MP4 cannot receive new burned-in labels without
+re-encoding. If you do not want to render the video again, export a WebVTT
+sidecar instead:
+
+```powershell
+.\.venv\Scripts\python.exe tools\export_event_captions.py
+```
+
+This creates [`data/debug_overlay_events.vtt`](data/debug_overlay_events.vtt).
+Load it as a subtitle/caption track alongside
+[`data/debug_overlay.mp4`](data/debug_overlay.mp4) in a player that supports
+WebVTT. It includes both `bed_exit` and `bed_return` labels.
+
 The rendering stage reuses the saved Parquet outputs and does not rerun pose
 inference. The result is [`data/debug_overlay.mp4`](data/debug_overlay.mp4).
 
@@ -173,6 +186,13 @@ If the person disappears directly after an in-bed segment, an
 `out_of_view_exit_sec` duration produces a lower-confidence event with the
 note `via_out_of_view`.
 
+After a confirmed exit, the detector looks for a return only while in `OUT`.
+When the person comes within `events.return_approach_dist` torso lengths of
+the bed, it enters `APPROACH`. `SITTING_ON_BED` must last at least
+`events.return_sit_sec`, followed by `LYING_IN_BED` for at least
+`events.return_lie_sec`, to emit a `bed_return`. If the person stands or walks
+away again, the approach is cancelled and the phase returns to `OUT`.
+
 Run this lightweight event stage without rerunning pose inference or creating
 a debug video:
 
@@ -183,4 +203,4 @@ a debug video:
 Outputs:
 
 - [`data/events.json`](data/events.json): detected event list
-- [`data/summary.json`](data/summary.json): event counts, events, and event configuration
+- [`data/summary.json`](data/summary.json): `bed_exit`/`bed_return` counts, events, and event configuration
