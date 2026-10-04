@@ -34,12 +34,12 @@ def event_text(event: dict[str, Any]) -> str:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--events", type=Path, default=Path("data/events.json"))
-    parser.add_argument("--summary", type=Path, default=Path("data/summary.json"))
+    parser.add_argument("--events", type=Path, default=Path("data/processed/events.json"))
+    parser.add_argument("--summary", type=Path, default=Path("data/processed/summary.json"))
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data/debug_overlay_events.vtt"),
+        default=Path("data/processed/debug_overlay_events.vtt"),
     )
     parser.add_argument(
         "--post-confirmation-sec",

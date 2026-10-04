@@ -96,8 +96,8 @@ def get_state_history(
     *,
     timeline: pd.DataFrame | None = None,
     features: pd.DataFrame | None = None,
-    timeline_path: str | Path = "data/timeline.parquet",
-    features_path: str | Path = "data/features.parquet",
+    timeline_path: str | Path = "data/processed/timeline.parquet",
+    features_path: str | Path = "data/processed/features.parquet",
     config_path: str | Path = DEFAULT_CONFIG,
 ) -> dict[str, Any]:
     """Summarize cached timeline segments and bed distance in [t0, t1]."""
@@ -132,7 +132,7 @@ def get_pose_features(
     t1: float,
     *,
     features: pd.DataFrame | None = None,
-    features_path: str | Path = "data/features.parquet",
+    features_path: str | Path = "data/processed/features.parquet",
     config_path: str | Path = DEFAULT_CONFIG,
 ) -> dict[str, Any]:
     """Summarize cached pose features in [t0, t1], without returning arrays."""

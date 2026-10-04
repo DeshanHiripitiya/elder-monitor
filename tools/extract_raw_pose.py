@@ -138,7 +138,7 @@ def main() -> None:
     parser.add_argument(
         "--output",
         type=Path,
-        default=Path("data/raw_pose.parquet"),
+        default=Path("data/processed/raw_pose.parquet"),
     )
     parser.add_argument(
         "--overwrite",

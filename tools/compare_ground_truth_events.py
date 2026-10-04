@@ -191,7 +191,7 @@ def main() -> None:
     parser.add_argument(
         "--gt-segments",
         type=Path,
-        default=Path("data/gt_events.csv"),
+        default=Path("data/raw/gt_events.csv"),
         help="CSV with start,end,state ground-truth state segments.",
     )
     parser.add_argument("--expected-exits", type=int, default=2)

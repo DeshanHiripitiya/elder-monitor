@@ -21,9 +21,9 @@ from src.frame_sampler import load_config
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
-    parser.add_argument("--segments", type=Path, default=Path("data/timeline.parquet"))
-    parser.add_argument("--features", type=Path, default=Path("data/features.parquet"))
-    parser.add_argument("--events", type=Path, default=Path("data/events.json"))
+    parser.add_argument("--segments", type=Path, default=Path("data/processed/timeline.parquet"))
+    parser.add_argument("--features", type=Path, default=Path("data/processed/features.parquet"))
+    parser.add_argument("--events", type=Path, default=Path("data/processed/events.json"))
     parser.add_argument("--output", type=Path, help="Optional JSON path for the case list")
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()

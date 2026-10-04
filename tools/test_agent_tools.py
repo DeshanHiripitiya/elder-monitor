@@ -108,7 +108,7 @@ def main() -> None:
     print(f"Video: {video_path}")
     print(f"Test window: {args.start:.1f}-{args.end:.1f}s")
     ground_truth = _ground_truth_window(
-        config_path.parent / "data" / "gt.csv",
+        config_path.parent / "data" / "raw" / "gt.csv",
         args.start,
         args.end,
     )

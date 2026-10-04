@@ -1,3 +1,10 @@
-data/
+data/raw/*
+!data/raw/README.md
+data/processed/*
+!data/processed/README.md
+!data/README.md
 .venv/
 .cache/
+__pycache__/
+*.py[cod]
+.pytest_cache/

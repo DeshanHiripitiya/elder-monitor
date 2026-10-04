@@ -1,6 +1,6 @@
-video: data/clip.mp4
+video: data/raw/clip.mp4
 sample_fps: 5
-pose_model: yolov8m-pose.pt
+pose_model: models/yolov8m-pose.pt
 bed_polygon:
 - - 734
   - 573

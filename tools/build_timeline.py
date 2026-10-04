@@ -167,10 +167,10 @@ def make_contiguous(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
-    parser.add_argument("--states", type=Path, default=Path("data/smoothed_states.parquet"))
-    parser.add_argument("--scores", type=Path, default=Path("data/state_scores.parquet"))
-    parser.add_argument("--output", type=Path, default=Path("data/timeline.parquet"))
-    parser.add_argument("--text-output", type=Path, default=Path("data/timeline.txt"))
+    parser.add_argument("--states", type=Path, default=Path("data/processed/smoothed_states.parquet"))
+    parser.add_argument("--scores", type=Path, default=Path("data/processed/state_scores.parquet"))
+    parser.add_argument("--output", type=Path, default=Path("data/processed/timeline.parquet"))
+    parser.add_argument("--text-output", type=Path, default=Path("data/processed/timeline.txt"))
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 

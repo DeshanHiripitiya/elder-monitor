@@ -1,5 +1,33 @@
 # Elder monitor
 
+## Repository layout and setup
+
+```text
+config.yaml              production-assumption settings
+config_demo.yaml         accelerated demo settings
+data/raw/                local videos and ground-truth annotations (not tracked)
+data/processed/          generated features, timelines, reports, and videos
+models/                  pose model weights
+scenarios/               synthetic alert test timelines
+src/                     reusable pipeline and agent logic
+tools/                   command-line pipeline and validation scripts
+tests/                   automated tests
+```
+
+Clone the repository, create a virtual environment, and install dependencies:
+
+```powershell
+py -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+```
+
+Copy your permitted source video to `data/raw/clip.mp4` (or change the `video`
+entry in the chosen YAML config). Optionally place state labels at
+`data/raw/gt.csv` and event labels at `data/raw/gt_events.csv`. These private
+input files and generated pipeline outputs are intentionally excluded from
+Git; see [`data/README.md`](data/README.md). The default pose weights are in
+[`models/`](models/); see its README for licensing notes.
+
 ## Select the mattress polygon
 
 Run the interactive selector from the repository root:
@@ -11,18 +39,15 @@ Run the interactive selector from the repository root:
 Click the four corners of the **mattress surface**, rather than the whole bed
 frame. Press `s` to save the points to [`config.yaml`](config.yaml), or `q` to
 cancel. The first-frame overlay is written to
-[`data/bed_polygon_overlay.png`](data/bed_polygon_overlay.png).
-
-Review the saved overlay here after selecting the polygon:
-
-![Mattress polygon overlay](data/bed_polygon_overlay.png)
+[`data/processed/bed_polygon_overlay.png`](data/processed/bed_polygon_overlay.png).
+The overlay is a local generated artifact and is not included in a fresh clone.
 
 The video path and output location can be overridden:
 
 ```powershell
 .\.venv\Scripts\python.exe tools\draw_bed.py `
   --config config.yaml `
-  --output-overlay data\bed_polygon_overlay.png
+  --output-overlay data\processed\bed_polygon_overlay.png
 ```
 
 If the first frame does not show the objects clearly, select a frame at a
@@ -30,7 +55,7 @@ specific timestamp. For example, to use the 12-second frame:
 
 ```powershell
 .\.venv\Scripts\python.exe tools\draw_bed.py `
-  --video data\clip.mp4 `
+  --video data\raw\clip.mp4 `
   --frame-time 12
 ```
 
@@ -45,7 +70,7 @@ Install the project dependencies and run the pose pipeline once:
 
 The pipeline samples at `sample_fps`, tracks with ByteTrack, selects the track
 with the most detections in the first 30 seconds, and writes one patient row
-per sampled frame to [`data/raw_pose.parquet`](data/raw_pose.parquet). Rows
+per sampled frame to [`data/processed/raw_pose.parquet`](data/processed/raw_pose.parquet). Rows
 without the selected patient have `present=False`. The output is protected
 against accidental reruns; use `--overwrite` only when intentionally
 regenerating the raw pose data.
@@ -58,8 +83,8 @@ Build features from the frozen raw pose output without rerunning pose inference:
 .\.venv\Scripts\python.exe tools\extract_features.py
 ```
 
-This writes [`data/features.parquet`](data/features.parquet) and the diagnostic
-plot [`data/feature_diagnostics.png`](data/feature_diagnostics.png). The plot
+This writes [`data/processed/features.parquet`](data/processed/features.parquet) and the diagnostic
+plot [`data/processed/feature_diagnostics.png`](data/processed/feature_diagnostics.png). The plot
 shows torso angle and the fraction of visible keypoints inside the bed polygon
 over time. Feature output is protected against accidental overwrites.
 
@@ -71,7 +96,7 @@ The `dist_to_bed` feature is zero when the hip is inside the bed polygon and
 otherwise stores the signed polygon-edge distance divided by torso length.
 It distinguishes standing beside the bed from standing farther away.
 
-![Feature diagnostics](data/feature_diagnostics.png)
+The diagnostic plot is generated locally and is not included in a fresh clone.
 
 ## Score per-frame states
 
@@ -83,14 +108,14 @@ Generate normalized soft scores instead of hard labels:
 
 Outputs:
 
-- [`data/state_scores.parquet`](data/state_scores.parquet): scores and argmax state
-- [`data/frame_scores.npy`](data/frame_scores.npy): matrix with shape
+- [`data/processed/state_scores.parquet`](data/processed/state_scores.parquet): scores and argmax state
+- [`data/processed/frame_scores.npy`](data/processed/frame_scores.npy): matrix with shape
   `(T, 7)` in the order configured in `tools/score_states.py`
 
 The states are `LYING_IN_BED`, `SITTING_ON_BED`,
 `SITTING_OUTSIDE_BED`, `STANDING`, `WALKING`, `OUT_OF_BED`, and `UNKNOWN`.
 Scores sum to 1 for each frame. Low visibility and low maximum confidence
-route frames toward `UNKNOWN`. If [`data/gt.csv`](data/gt.csv) is present, the
+route frames toward `UNKNOWN`. If [`data/raw/gt.csv`](data/raw/gt.csv) is present, the
 command also compares argmax states against its labeled time intervals and
 prints rough accuracy and a confusion matrix.
 
@@ -108,7 +133,7 @@ The transition model keeps states sticky at the configured 5 FPS, allows
 realistic movements such as `LYING_IN_BED` to `SITTING_ON_BED` to `STANDING`
 to `WALKING`, forbids direct lying-to-walking transitions, and gives
 `UNKNOWN` a small escape probability from every state. The output is written
-to [`data/smoothed_states.parquet`](data/smoothed_states.parquet).
+to [`data/processed/smoothed_states.parquet`](data/processed/smoothed_states.parquet).
 
 ## Build the timeline
 
@@ -120,8 +145,8 @@ Collapse consecutive smoothed states into duration-filtered segments:
 
 Outputs:
 
-- [`data/timeline.parquet`](data/timeline.parquet): start, end, state, and mean confidence
-- [`data/timeline.txt`](data/timeline.txt): human-readable timeline
+- [`data/processed/timeline.parquet`](data/processed/timeline.parquet): start, end, state, and mean confidence
+- [`data/processed/timeline.txt`](data/processed/timeline.txt): human-readable timeline
 
 Segments shorter than `min_segment_sec` are merged into a neighboring segment.
 Short `STANDING` segments between bed sitting/lying segments are preserved for
@@ -147,10 +172,10 @@ the overlay marks its source timestamp as `pose sample t=...`.
 
 The header also shows `dist_to_bed` in torso lengths. It is `0.00` while the
 hip is inside the bed polygon and increases as the hip moves away from the
-bed. The value is read from [`data/features.parquet`](data/features.parquet),
+bed. The value is read from [`data/processed/features.parquet`](data/processed/features.parquet),
 so rendering does not rerun pose inference.
 
-When [`data/events.json`](data/events.json) exists, the renderer adds an event
+When [`data/processed/events.json`](data/processed/events.json) exists, the renderer adds an event
 panel around each event. The panel shows the event type, `CANDIDATE` or
 `CONFIRMED` status, start and confirmation times, previous/current states,
 event confidence, and optional notes. It remains visible for five seconds
@@ -164,15 +189,15 @@ sidecar instead:
 .\.venv\Scripts\python.exe tools\export_event_captions.py
 ```
 
-This creates [`data/debug_overlay_events.vtt`](data/debug_overlay_events.vtt).
+This creates [`data/processed/debug_overlay_events.vtt`](data/processed/debug_overlay_events.vtt).
 Load it as a subtitle/caption track alongside
-[`data/debug_overlay.mp4`](data/debug_overlay.mp4) in a player that supports
+[`data/processed/debug_overlay.mp4`](data/processed/debug_overlay.mp4) in a player that supports
 WebVTT. It includes the duration summary for the first ten seconds and both
 `bed_exit` and `bed_return` labels at their event times. Regenerate only this
 small sidecar after changing event or duration outputs.
 
 The rendering stage reuses the saved Parquet outputs and does not rerun pose
-inference. The result is [`data/debug_overlay.mp4`](data/debug_overlay.mp4).
+inference. The result is [`data/processed/debug_overlay.mp4`](data/processed/debug_overlay.mp4).
 
 ## Detect bed-exit events
 
@@ -216,8 +241,8 @@ a debug video:
 
 Outputs:
 
-- [`data/events.json`](data/events.json): detected event list
-- [`data/summary.json`](data/summary.json): `bed_exit`/`bed_return` counts, events, and event configuration
+- [`data/processed/events.json`](data/processed/events.json): detected event list
+- [`data/processed/summary.json`](data/processed/summary.json): `bed_exit`/`bed_return` counts, events, and event configuration
 
 ## Compare event logic with ground truth
 
@@ -343,7 +368,7 @@ decisions. At the same timestamp, the highest-priority matching rule wins.
 Each entry in `events.json` includes `decision` and `reason`. Confirmed bed
 exits are MONITOR by default (or MONITOR with a low-confidence reason); a
 confirmed bed return is NORMAL because the person is back in bed. Threshold
-crossings are written to [`data/alerts.json`](data/alerts.json) with exactly
+crossings are written to [`data/processed/alerts.json`](data/processed/alerts.json) with exactly
 `time`, `level`, `rule`, and `reason`. `summary.json` also reports
 `overall_decision`, the highest severity in the chronological decision
 timeline and event decisions.

@@ -129,7 +129,7 @@ def main() -> None:
     if not video_path.is_absolute():
         video_path = config_path.parent / video_path
     if not video_path.exists():
-        available_videos = sorted(config_path.parent.glob("data/*.mp4"))
+        available_videos = sorted(config_path.parent.glob("data/raw/*.mp4"))
         available_message = ", ".join(str(path.relative_to(config_path.parent)) for path in available_videos)
         hint = f" Available videos: {available_message}." if available_message else ""
         raise FileNotFoundError(f"Video does not exist: {video_path}.{hint}")
@@ -157,7 +157,7 @@ def main() -> None:
         cv2.destroyAllWindows()
 
     save_polygon(config_path, config, points)
-    overlay_path = args.output_overlay or Path("data/bed_polygon_overlay.png")
+    overlay_path = args.output_overlay or Path("data/processed/bed_polygon_overlay.png")
     if not overlay_path.is_absolute():
         overlay_path = config_path.parent / overlay_path
     overlay_path.parent.mkdir(parents=True, exist_ok=True)

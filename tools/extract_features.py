@@ -141,12 +141,12 @@ def save_diagnostic_plot(features: pd.DataFrame, output_path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
-    parser.add_argument("--input", type=Path, default=Path("data/raw_pose.parquet"))
-    parser.add_argument("--output", type=Path, default=Path("data/features.parquet"))
+    parser.add_argument("--input", type=Path, default=Path("data/processed/raw_pose.parquet"))
+    parser.add_argument("--output", type=Path, default=Path("data/processed/features.parquet"))
     parser.add_argument(
         "--plot",
         type=Path,
-        default=Path("data/feature_diagnostics.png"),
+        default=Path("data/processed/feature_diagnostics.png"),
     )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()

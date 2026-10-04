@@ -206,12 +206,12 @@ def draw_overlay(
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
-    parser.add_argument("--states", type=Path, default=Path("data/smoothed_states.parquet"))
-    parser.add_argument("--scores", type=Path, default=Path("data/state_scores.parquet"))
-    parser.add_argument("--features", type=Path, default=Path("data/features.parquet"))
-    parser.add_argument("--pose", type=Path, default=Path("data/raw_pose.parquet"))
-    parser.add_argument("--events", type=Path, default=Path("data/events.json"))
-    parser.add_argument("--output", type=Path, default=Path("data/debug_overlay.mp4"))
+    parser.add_argument("--states", type=Path, default=Path("data/processed/smoothed_states.parquet"))
+    parser.add_argument("--scores", type=Path, default=Path("data/processed/state_scores.parquet"))
+    parser.add_argument("--features", type=Path, default=Path("data/processed/features.parquet"))
+    parser.add_argument("--pose", type=Path, default=Path("data/processed/raw_pose.parquet"))
+    parser.add_argument("--events", type=Path, default=Path("data/processed/events.json"))
+    parser.add_argument("--output", type=Path, default=Path("data/processed/debug_overlay.mp4"))
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 

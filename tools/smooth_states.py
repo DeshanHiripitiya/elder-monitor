@@ -81,8 +81,8 @@ def viterbi(log_emit: np.ndarray, log_trans: np.ndarray) -> list[int]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
-    parser.add_argument("--input", type=Path, default=Path("data/state_scores.parquet"))
-    parser.add_argument("--output", type=Path, default=Path("data/smoothed_states.parquet"))
+    parser.add_argument("--input", type=Path, default=Path("data/processed/state_scores.parquet"))
+    parser.add_argument("--output", type=Path, default=Path("data/processed/smoothed_states.parquet"))
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
@@ -120,7 +120,7 @@ def main() -> None:
         f"({smoothed['changed_from_argmax'].mean():.1%})",
     )
 
-    gt_path = config_path.parent / "data/gt.csv"
+    gt_path = config_path.parent / "data/raw/gt.csv"
     if gt_path.exists():
         truth = ground_truth_labels(gt_path, smoothed["t"])
         comparable = truth.notna()

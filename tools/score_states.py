@@ -171,10 +171,10 @@ def score_row(row: pd.Series, config: dict[str, Any]) -> np.ndarray:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
-    parser.add_argument("--input", type=Path, default=Path("data/features.parquet"))
-    parser.add_argument("--output", type=Path, default=Path("data/state_scores.parquet"))
-    parser.add_argument("--matrix", type=Path, default=Path("data/frame_scores.npy"))
-    parser.add_argument("--gt", type=Path, default=Path("data/gt.csv"))
+    parser.add_argument("--input", type=Path, default=Path("data/processed/features.parquet"))
+    parser.add_argument("--output", type=Path, default=Path("data/processed/state_scores.parquet"))
+    parser.add_argument("--matrix", type=Path, default=Path("data/processed/frame_scores.npy"))
+    parser.add_argument("--gt", type=Path, default=Path("data/raw/gt.csv"))
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
