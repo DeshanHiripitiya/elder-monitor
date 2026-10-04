@@ -44,10 +44,161 @@ def decide_bed_exit(event: dict[str, Any], alerts: dict[str, Any]) -> dict[str, 
         rule = "confirmed_bed_exit"
     note = (
         "night_exit"
-        if is_night(float(event["start_time"]), alerts)
+        if is_night(float(event["confirmed_time"]), alerts)
         else "confirmed_exit"
     )
     return _decision("MONITOR", rule, reason, note=note)
+
+
+def run_alerts(
+    segments: list[dict[str, Any]],
+    events: list[dict[str, Any]],
+    alerts: dict[str, Any],
+    *,
+    video_duration: float,
+) -> list[dict[str, Any]]:
+    """Evaluate event and sustained-state rules in timeline order.
+
+    Threshold-based records are timestamped at the first second when the
+    configured threshold is reached. Iterating at one-second resolution also
+    correctly handles a day/night threshold change during an ongoing episode.
+    """
+    decisions: list[dict[str, Any]] = []
+    exits = sorted(
+        (event for event in events if event.get("type") == "bed_exit"),
+        key=lambda event: float(event["confirmed_time"]),
+    )
+    returns = sorted(
+        (event for event in events if event.get("type") == "bed_return"),
+        key=lambda event: float(event["confirmed_time"]),
+    )
+    used_returns: set[int] = set()
+
+    def add(
+        timestamp: float,
+        priority: int,
+        level: str,
+        rule: str,
+        reason: str,
+        **extra: Any,
+    ) -> None:
+        decisions.append(
+            {
+                "decision": level,
+                "t": round(float(timestamp), 3),
+                "rule": rule,
+                "reason": reason,
+                "_priority": priority,
+                **extra,
+            }
+        )
+
+    for event in exits:
+        confirmed = float(event["confirmed_time"])
+        matched_return = next(
+            (
+                (index, return_event)
+                for index, return_event in enumerate(returns)
+                if index not in used_returns
+                and float(return_event["confirmed_time"]) >= confirmed
+            ),
+            None,
+        )
+        interval_end = (
+            float(matched_return[1]["confirmed_time"])
+            if matched_return is not None
+            else float(video_duration)
+        )
+        if matched_return is not None:
+            used_returns.add(matched_return[0])
+
+        exit_decision = decide_bed_exit(event, alerts)
+        add(
+            confirmed,
+            4 if exit_decision["rule"] == "confirmed_bed_exit" else 5,
+            exit_decision["decision"],
+            exit_decision["rule"],
+            exit_decision["reason"],
+            note=exit_decision["note"],
+        )
+
+        elapsed_second = int(confirmed) + 1
+        while elapsed_second <= interval_end:
+            elapsed = elapsed_second - confirmed
+            period = "night" if is_night(elapsed_second, alerts) else "day"
+            out_limit = float(alerts["out_of_bed_alert_sec"][period])
+            if elapsed >= out_limit:
+                add(
+                    confirmed + out_limit,
+                    1,
+                    "ALERT",
+                    "out_of_bed_duration",
+                    f"out_of_bed duration reached {out_limit:.0f}s {period} threshold",
+                )
+                break
+
+            if event.get("note") == "via_out_of_view":
+                view_limit = float(alerts["out_of_view_alert_sec"][period])
+                if elapsed >= view_limit:
+                    add(
+                        confirmed + view_limit,
+                        2,
+                        "ALERT",
+                        "out_of_view_duration",
+                        f"out_of_view duration reached {view_limit:.0f}s {period} threshold",
+                    )
+                    break
+            elapsed_second += 1
+
+    for segment in sorted(segments, key=lambda item: float(item["start"])):
+        start = float(segment["start"])
+        end = min(float(segment["end"]), float(video_duration))
+        if end <= start:
+            continue
+        state = str(segment["state"])
+        if state == "LYING_ON_FLOOR":
+            threshold = float(alerts["floor_lying_alert_sec"])
+            if end - start >= threshold:
+                add(
+                    start + threshold,
+                    3,
+                    "ALERT",
+                    "floor_lying",
+                    f"lying_on_floor duration reached {threshold:.0f}s threshold",
+                )
+        elif state == "SITTING_ON_BED":
+            threshold = float(alerts["edge_sit_monitor_sec"])
+            if end - start >= threshold:
+                add(
+                    start + threshold,
+                    6,
+                    "MONITOR",
+                    "prolonged_bed_sitting",
+                    f"sitting_on_bed duration reached {threshold:.0f}s monitor threshold",
+                    limitation=(
+                        "Edge sitting is approximated by all SITTING_ON_BED; "
+                        "sitting up in bed is not distinguished."
+                    ),
+                )
+        elif state == "UNKNOWN":
+            threshold = float(alerts["unknown_monitor_sec"])
+            if end - start >= threshold:
+                add(
+                    start + threshold,
+                    7,
+                    "MONITOR",
+                    "continuous_unknown",
+                    f"UNKNOWN duration reached {threshold:.0f}s monitor threshold",
+                )
+
+    decisions.sort(key=lambda decision: (float(decision["t"]), decision["_priority"]))
+    timeline: list[dict[str, Any]] = []
+    for decision in decisions:
+        if timeline and float(timeline[-1]["t"]) == float(decision["t"]):
+            continue
+        decision.pop("_priority")
+        timeline.append(decision)
+    return timeline
 
 
 def evaluate_decision(

@@ -16,7 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.events import detect_exits
-from src.decisions import decide_bed_exit, evaluate_decision
+from src.decisions import decide_bed_exit, evaluate_decision, run_alerts
 from src.frame_sampler import load_config
 
 
@@ -94,6 +94,12 @@ def main() -> None:
             config["alerts"],
             video_duration=video_duration,
         ),
+        "decision_timeline": run_alerts(
+            segments,
+            events,
+            config["alerts"],
+            video_duration=video_duration,
+        ),
         "duration_summary": {
             "duration_by_state_sec": durations,
             "time_in_bed_sec": time_in_bed,
@@ -108,6 +114,11 @@ def main() -> None:
         },
         "configuration": config["events"],
     }
+    summary["alerts"] = [
+        decision
+        for decision in summary["decision_timeline"]
+        if decision["decision"] == "ALERT"
+    ]
     events_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
     events_path.write_text(json.dumps(events, indent=2) + "\n", encoding="utf-8")

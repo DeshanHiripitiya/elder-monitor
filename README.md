@@ -319,3 +319,21 @@ The generated `summary.json` includes a `final_decision` object with a decision 
 matched rule, and human-readable reason. Each bed-exit entry also records its
 own MONITOR decision and note (including `night_exit`), even if a later return
 makes the final video state NORMAL.
+
+### Time-based decision evaluation
+
+`decision_timeline` evaluates event and sustained-segment rules in time order,
+instead of inferring alerts from end-of-video totals. An out-of-bed or
+out-of-view alert is timestamped at `bed_exit.confirmed_time + threshold`,
+the time it would have fired during monitoring—not at the later return time.
+Threshold selection uses `video_start_clock` plus the current segment/event
+timestamp, so an episode spanning the day/night boundary uses the threshold
+active when the alert would fire.
+
+The same stateful evaluation can run unchanged on a live stream by supplying
+segments/events as they arrive and the current elapsed timestamp. The current
+batch pipeline evaluates the completed video timeline, but its alert
+timestamps represent the corresponding live decision times.
+`summary.json` stores the chronological `decision_timeline` (including
+MONITOR decisions) and a separate `alerts` list containing only ALERT
+decisions. At the same timestamp, the highest-priority matching rule wins.

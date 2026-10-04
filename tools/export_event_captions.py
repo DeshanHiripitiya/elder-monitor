@@ -114,6 +114,24 @@ def main() -> None:
                 "",
             ]
         )
+    for index, decision in enumerate(summary.get("decision_timeline", []), start=1):
+        if decision.get("decision") == "NORMAL":
+            continue
+        start = float(decision["t"])
+        cues.extend(
+            [
+                f"decision-{index}",
+                (
+                    f"{vtt_timestamp(start)} --> "
+                    f"{vtt_timestamp(start + args.post_confirmation_sec)}"
+                ),
+                (
+                    f"{decision['decision']}: {decision['rule']}\n"
+                    f"{decision['reason']}"
+                ),
+                "",
+            ]
+        )
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text("\n".join(cues), encoding="utf-8")
