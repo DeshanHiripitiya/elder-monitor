@@ -380,3 +380,33 @@ threshold, and 30-second night out-of-view threshold so these cases complete
 quickly. Production-assumption settings are longer; neither set has been
 clinically validated. Floor lying is untested on real footage, and edge
 sitting remains an approximation of all `SITTING_ON_BED` segments.
+
+## Bounded agent triage
+
+The agent begins with a deterministic trigger inventory; this step does not
+call a VLM. It creates cases for low-confidence or short segments, UNKNOWN
+segments, lying segments with a mixed bed/floor keypoint signal, exit
+candidates, and bed exits below the configured alert confidence. Overlapping
+triggers are grouped into one time window so the same uncertainty does not
+create duplicate cases.
+
+Run the inventory against the existing timeline and pose features:
+
+```powershell
+.\.venv\Scripts\python.exe tools\triage_cases.py
+```
+
+The current video yields **8 cases**, within the requested 5–15 range. They
+cover 0.0–11.8 s, 18.2–88.2 s, 150.6–156.4 s, 174.6–180.8 s,
+190.8–199.8 s, 228.6–231.0 s, 314.8–347.2 s, and 359.6–378.2 s.
+The command prints trigger reasons and configured ceilings: 6 steps per case,
+2 VLM calls per case, 40 total VLM calls, and 6 frames per VLM call.
+
+All thresholds and call budgets live under `agent` in
+[`config.yaml`](config.yaml); the same agent settings are available in
+[`config_demo.yaml`](config_demo.yaml). The target execution order is
+state-history lookup, pose-feature lookup, wider temporal context, then a
+budgeted VLM call only when cheaper evidence has not resolved the case. The
+VLM executor and its call-rate measurement are not implemented in this
+trigger-inventory step, so no “8% of segments” call rate is claimed yet.
+Future evaluation should compute that percentage from actual call records.

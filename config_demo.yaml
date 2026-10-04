@@ -50,6 +50,14 @@ alerts:
   floor_lying_alert_sec: 3
   night_window: ["22:00", "06:00"]
   video_start_clock: "02:00"
+agent:
+  trigger_conf: 0.6
+  trigger_short_sec: 3
+  bed_floor_conflict: [0.3, 0.7]
+  max_steps_per_case: 6
+  max_vlm_calls_per_case: 2
+  max_vlm_calls_total: 40
+  vlm_frames: 6
 smoothing:
   self_probability: 0.98
   unknown_probability: 0.005
