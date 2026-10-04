@@ -412,3 +412,45 @@ budgeted VLM call only when cheaper evidence has not resolved the case. The
 VLM executor and its call-rate measurement are not implemented in this
 trigger-inventory step, so no “8% of segments” call rate is claimed yet.
 Future evaluation should compute that percentage from actual call records.
+
+### Cached-data tools and real-video smoke test
+
+The four read-only agent tools are implemented in
+[`src/agent_tools.py`](src/agent_tools.py):
+
+- `get_state_history(t0, t1)` returns overlapping timeline segments with
+  confidence and the bed-distance range.
+- `get_pose_features(t0, t1)` returns compact feature summaries; it does not
+  expose raw frame arrays.
+- `extend_window(t0, t1, direction, seconds=10)` clips to the video and keeps
+  the total context window at or below 60 seconds. For `both`, `seconds` is
+  the requested extension on each side, subject to the total-window cap.
+- `vlm_describe_clip(t0, t1, question, client=...)` samples configured
+  interior frames plus both boundaries, overlays the bed polygon and
+  timestamps, and caches JSON results using the video identity, interval,
+  question, model, frame count, and polygon.
+
+The VLM call uses the provider-neutral `VLMClient` interface. `MockVLM` is
+available for tests and offline checks. No paid or external provider has been
+selected or implemented yet; the real-video smoke test therefore uses actual
+video frames but a mocked VLM response.
+
+Run the unit tests:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests\test_agent_tools.py -q
+```
+
+Exercise all four tools on real cached output and actual frames from a
+ground-truth-labeled sitting interval (default 120–145 seconds):
+
+```powershell
+.\.venv\Scripts\python.exe tools\test_agent_tools.py --mock-vlm
+```
+
+The command prints the ground-truth labels beside compact outputs from the
+cached timeline/features, reports segment agreement, demonstrates backward
+and forward window extension, and decodes annotated frames from the configured
+source video. Adjust the real-data window with `--start` and `--end`. It makes
+no external VLM request. Its first run writes a reusable mock-response entry
+under `.cache/agent_vlm/`.
