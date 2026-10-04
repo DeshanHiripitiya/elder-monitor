@@ -16,7 +16,12 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.events import detect_exits
-from src.decisions import decide_bed_exit, evaluate_decision, run_alerts
+from src.decisions import (
+    decide_bed_exit,
+    decision_level,
+    evaluate_decision,
+    run_alerts,
+)
 from src.frame_sampler import load_config
 
 
@@ -27,6 +32,7 @@ def main() -> None:
     parser.add_argument("--features", type=Path, default=Path("data/features.parquet"))
     parser.add_argument("--events", type=Path, default=Path("data/events.json"))
     parser.add_argument("--summary", type=Path, default=Path("data/summary.json"))
+    parser.add_argument("--alerts", type=Path, default=Path("data/alerts.json"))
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
@@ -36,7 +42,10 @@ def main() -> None:
     features_path = args.features if args.features.is_absolute() else config_path.parent / args.features
     events_path = args.events if args.events.is_absolute() else config_path.parent / args.events
     summary_path = args.summary if args.summary.is_absolute() else config_path.parent / args.summary
-    if (events_path.exists() or summary_path.exists()) and not args.overwrite:
+    alerts_path = args.alerts if args.alerts.is_absolute() else config_path.parent / args.alerts
+    if (
+        events_path.exists() or summary_path.exists() or alerts_path.exists()
+    ) and not args.overwrite:
         raise FileExistsError("Event outputs exist; use --overwrite to regenerate them")
 
     segments = pd.read_parquet(segments_path).to_dict("records")
@@ -45,10 +54,22 @@ def main() -> None:
     for event in events:
         if event["type"] == "bed_exit":
             event_decision = decide_bed_exit(event, config["alerts"])
-            event["decision"] = event_decision["decision"]
-            event["decision_rule"] = event_decision["rule"]
-            event["decision_reason"] = event_decision["reason"]
-            event["decision_note"] = event_decision["note"]
+            event.update(
+                {
+                    "decision": event_decision["decision"],
+                    "reason": event_decision["reason"],
+                    "rule": event_decision["rule"],
+                    "decision_note": event_decision["note"],
+                }
+            )
+        elif event["type"] == "bed_return":
+            event.update(
+                {
+                    "decision": "NORMAL",
+                    "reason": "bed_return confirmed; person is back in bed",
+                    "rule": "confirmed_bed_return",
+                }
+            )
     video_path = Path(config["video"])
     if not video_path.is_absolute():
         video_path = config_path.parent / video_path
@@ -115,16 +136,27 @@ def main() -> None:
         "configuration": config["events"],
     }
     summary["alerts"] = [
-        decision
+        {
+            "time": decision["t"],
+            "level": decision["decision"],
+            "rule": decision["rule"],
+            "reason": decision["reason"],
+        }
         for decision in summary["decision_timeline"]
         if decision["decision"] == "ALERT"
     ]
+    summary["overall_decision"] = decision_level(
+        summary["decision_timeline"] + events
+    )
     events_path.parent.mkdir(parents=True, exist_ok=True)
     summary_path.parent.mkdir(parents=True, exist_ok=True)
+    alerts_path.parent.mkdir(parents=True, exist_ok=True)
     events_path.write_text(json.dumps(events, indent=2) + "\n", encoding="utf-8")
     summary_path.write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
+    alerts_path.write_text(json.dumps(summary["alerts"], indent=2) + "\n", encoding="utf-8")
     print(f"Saved {len(events)} events to {events_path}")
     print(f"Saved summary to {summary_path}")
+    print(f"Saved {len(summary['alerts'])} alerts to {alerts_path}")
 
 
 if __name__ == "__main__":

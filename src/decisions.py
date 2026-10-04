@@ -30,6 +30,16 @@ def _decision(level: str, rule: str, reason: str, **extra: Any) -> dict[str, Any
     return {"decision": level, "rule": rule, "reason": reason, **extra}
 
 
+def decision_level(decisions: list[dict[str, Any]]) -> str:
+    """Return the highest severity represented by decision records."""
+    rank = {"NORMAL": 0, "MONITOR": 1, "ALERT": 2}
+    return max(
+        (str(item.get("decision", "NORMAL")) for item in decisions),
+        key=lambda level: rank.get(level, -1),
+        default="NORMAL",
+    )
+
+
 def decide_bed_exit(event: dict[str, Any], alerts: dict[str, Any]) -> dict[str, Any]:
     """Assign the default MONITOR outcome to a confirmed exit event."""
     confidence = float(event.get("confidence", 0.0))

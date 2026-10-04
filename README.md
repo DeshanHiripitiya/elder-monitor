@@ -337,3 +337,20 @@ timestamps represent the corresponding live decision times.
 `summary.json` stores the chronological `decision_timeline` (including
 MONITOR decisions) and a separate `alerts` list containing only ALERT
 decisions. At the same timestamp, the highest-priority matching rule wins.
+
+Each entry in `events.json` includes `decision` and `reason`. Confirmed bed
+exits are MONITOR by default (or MONITOR with a low-confidence reason); a
+confirmed bed return is NORMAL because the person is back in bed. Threshold
+crossings are written to [`data/alerts.json`](data/alerts.json) with exactly
+`time`, `level`, `rule`, and `reason`. `summary.json` also reports
+`overall_decision`, the highest severity in the chronological decision
+timeline and event decisions.
+
+Synthetic alert-policy cases are in [`tests/test_alerts.py`](tests/test_alerts.py).
+They cover return before threshold, day/night duration differences, out of
+view, prolonged bed sitting, UNKNOWN duration, low-confidence exit, floor
+lying, and horizontal lying on the bed. Run with:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest tests\test_alerts.py -q
+```
