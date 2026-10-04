@@ -262,7 +262,7 @@ All alert thresholds are configurable under `alerts` in
 demonstration only; they are **not clinically validated values** and must not
 be treated as medical guidance.
 
-| Setting | Production/demo default | Rationale |
+| Setting | `config.yaml` assumption | Rationale |
 |---|---:|---|
 | `edge_sit_monitor_sec` | 300 s | A few minutes of edge sitting can be normal, such as putting on slippers or resting. Very long sitting may indicate dizziness, confusion, or difficulty standing, so it is a MONITOR condition. |
 | `unknown_monitor_sec` | 30 s | Continuous UNKNOWN is uncertain. Record and show it for review rather than generating an expensive caregiver alert. |
@@ -282,28 +282,30 @@ the rules can be exercised within one clip. These accelerated values are
 demonstration-only; production values remain in `config.yaml` and differ
 substantially.
 
-The source video is short relative to the production alert durations. In this
-repository its measured duration is about 401 seconds (6 minutes 41 seconds);
-even if a different copy is approximately 7.5 minutes, no 15- or 30-minute
-threshold can fire during a single playback. Use `config_demo.yaml` for a
-live demo, and state clearly that its thresholds are scaled and unvalidated.
+The source video is short relative to the alert durations. In this repository
+its measured duration is about 401 seconds (6 minutes 41 seconds); no 15- or
+30-minute threshold can fire during a single playback. Use `config_demo.yaml`
+for a live demo, and state clearly that its thresholds are scaled and
+unvalidated.
 
 ### Decision rules and priorities
 
-The decision engine checks conditions in order and returns the first matching
-decision, with a reason string:
+The engine evaluates the timeline in time order and returns decisions with
+reasons. Threshold values are assumptions, not clinical recommendations:
 
-1. An unreturned bed exit exceeding the day/night out-of-bed threshold:
-   **ALERT**.
-2. An out-of-view bed exit exceeding the day/night out-of-view threshold:
-   **ALERT**.
-3. `LYING_ON_FLOOR` longer than `floor_lying_alert_sec`: **ALERT**.
-4. A confirmed exit with sufficient confidence: **MONITOR**. A night-time
-   exit adds the `night_exit` note; getting up itself does not page a caregiver.
-5. An exit below `exit_low_conf`: **MONITOR** as uncertain.
-6. Continuous `SITTING_ON_BED` longer than `edge_sit_monitor_sec`: **MONITOR**.
-7. Continuous `UNKNOWN` longer than `unknown_monitor_sec`: **MONITOR**.
-8. Otherwise: **NORMAL**.
+| Priority | Rule and decision | Threshold | Why this rule/threshold exists |
+|---:|---|---|---|
+| 1 | Unreturned bed exit → **ALERT** | Day 1,800 s; night 900 s | Toilet visits may take 5–15 minutes; substantially longer may indicate risk. Night uses a shorter interval because the person may be less steady and less observed. |
+| 2 | Out of view after exit → **ALERT** | Day 900 s; night 600 s | The system cannot observe the person, so the allowed unseen interval is shorter than the general out-of-bed limit. Night is stricter. |
+| 3 | Horizontal `LYING_ON_FLOOR` → **ALERT** | 10 s | Potentially dangerous; the brief delay filters short bending or picking something up. |
+| 4 | Confirmed bed exit → **MONITOR** (with `night_exit` note at night) | At exit confirmation | Getting up is often normal but worth logging; it does not page a caregiver by itself. |
+| 5 | Low-confidence exit → **MONITOR** | `exit_low_conf: 0.6` | Uncertain evidence should be reviewed, not escalated as an immediate alert. |
+| 6 | Prolonged `SITTING_ON_BED` → **MONITOR** | `edge_sit_monitor_sec: 300 s` | A few minutes may be normal (resting or putting on slippers); very long sitting may indicate difficulty standing. |
+| 7 | Continuous `UNKNOWN` → **MONITOR** | `unknown_monitor_sec: 30 s` | Persistent uncertainty needs dashboard visibility, but is not by itself proof of danger. |
+| 8 | No rule matches → **NORMAL** | None | No configured condition currently warrants human attention. |
+| — | Select day/night thresholds from the assumed video clock | `night_window: 22:00–06:00`; `video_start_clock: 02:00` | The clip has no clock metadata; these assumptions determine which time-of-day duration threshold applies. |
+
+thresholds would be tuned per resident (mobility, medication, usual night routine) and per time of day.
 
 Edge sitting is intentionally approximated using all `SITTING_ON_BED`
 segments. Sitting at the mattress edge is not reliably distinguished from
@@ -354,3 +356,27 @@ lying, and horizontal lying on the bed. Run with:
 ```powershell
 .\.venv\Scripts\python.exe -m pytest tests\test_alerts.py -q
 ```
+
+### Synthetic scenarios: demonstrating all decision levels
+
+The JSON timelines in [`scenarios/`](scenarios/) are explicitly synthetic;
+they exercise alert logic and are not real footage, staged falls, or evidence
+of clinical safety. Run them with the accelerated demo thresholds:
+
+```powershell
+.\.venv\Scripts\python.exe tools\run_scenarios.py
+```
+
+Expected demonstration results:
+
+| Synthetic timeline | Decisions | Overall |
+|---|---|---|
+| Floor lying | ALERT at 3.0 s (`floor_lying`) | **ALERT** |
+| Night out of bed | MONITOR at 0.0 s (`confirmed_bed_exit`); ALERT at 45.0 s (`out_of_bed_duration`) | **ALERT** |
+| Night out of view | MONITOR at 0.0 s (`confirmed_bed_exit`); ALERT at 30.0 s (`out_of_view_duration`) | **ALERT** |
+
+The demo uses a 3-second floor threshold, 45-second night out-of-bed
+threshold, and 30-second night out-of-view threshold so these cases complete
+quickly. Production-assumption settings are longer; neither set has been
+clinically validated. Floor lying is untested on real footage, and edge
+sitting remains an approximation of all `SITTING_ON_BED` segments.

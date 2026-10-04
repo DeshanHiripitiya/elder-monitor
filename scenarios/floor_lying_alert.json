@@ -1,0 +1,15 @@
+{
+  "synthetic": true,
+  "name": "floor_lying_threshold",
+  "description": "Synthetic horizontal off-bed state exceeds the demo floor-lying threshold.",
+  "video_duration": 8,
+  "segments": [
+    {
+      "start": 0,
+      "end": 8,
+      "state": "LYING_ON_FLOOR",
+      "mean_confidence": 0.9
+    }
+  ],
+  "events": []
+}

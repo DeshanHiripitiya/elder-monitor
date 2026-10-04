@@ -1,0 +1,23 @@
+{
+  "synthetic": true,
+  "name": "night_out_of_view_threshold",
+  "description": "Synthetic exit is not visible beyond the demo night threshold.",
+  "video_duration": 40,
+  "segments": [
+    {
+      "start": 0,
+      "end": 40,
+      "state": "OUT_OF_BED",
+      "mean_confidence": 0.9
+    }
+  ],
+  "events": [
+    {
+      "type": "bed_exit",
+      "start_time": 0,
+      "confirmed_time": 0,
+      "confidence": 0.9,
+      "note": "via_out_of_view"
+    }
+  ]
+}

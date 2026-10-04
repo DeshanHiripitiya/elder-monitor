@@ -1,0 +1,22 @@
+{
+  "synthetic": true,
+  "name": "night_out_of_bed_threshold",
+  "description": "Synthetic exit remains unreturned beyond the demo night threshold.",
+  "video_duration": 70,
+  "segments": [
+    {
+      "start": 0,
+      "end": 70,
+      "state": "WALKING",
+      "mean_confidence": 0.9
+    }
+  ],
+  "events": [
+    {
+      "type": "bed_exit",
+      "start_time": 0,
+      "confirmed_time": 0,
+      "confidence": 0.9
+    }
+  ]
+}
