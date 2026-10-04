@@ -25,6 +25,7 @@ STATES = (
     "WALKING",
     "OUT_OF_BED",
     "UNKNOWN",
+    "LYING_ON_FLOOR",
 )
 
 
@@ -115,6 +116,8 @@ def score_row(row: pd.Series, config: dict[str, Any]) -> np.ndarray:
         (angle - thresholds["lying_angle_deg"] + scoring["upright_angle_deg"])
         / max(90 - thresholds["lying_angle_deg"], 1e-6)
     )
+    floor_bed_fraction_max = float(scoring["floor_bed_fraction_max"])
+    floor_torso_angle_min = float(scoring["floor_torso_angle_min_deg"])
     lying_shape = clip01((aspect - 0.8) / 1.2)
     bed_presence = bed_fraction
     sitting_height = clip01(
@@ -144,9 +147,16 @@ def score_row(row: pd.Series, config: dict[str, Any]) -> np.ndarray:
             upright * standing_height * walking,
             0.0,
             0.0,
+            0.0,
         ],
         dtype=float,
     )
+    if (
+        pd.notna(row["kp_in_bed_frac"])
+        and bed_fraction <= floor_bed_fraction_max
+        and angle >= floor_torso_angle_min
+    ):
+        raw[STATES.index("LYING_ON_FLOOR")] = max(lying_angle, 1.0)
     if confidence < scoring["visibility_unknown"]:
         raw[STATES.index("UNKNOWN")] = 1.0 - confidence
     if float(raw.max(initial=0.0)) < thresholds["unknown_score"]:

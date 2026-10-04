@@ -16,6 +16,7 @@ if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 
 from src.events import detect_exits
+from src.decisions import decide_bed_exit, evaluate_decision
 from src.frame_sampler import load_config
 
 
@@ -41,6 +42,13 @@ def main() -> None:
     segments = pd.read_parquet(segments_path).to_dict("records")
     features = pd.read_parquet(features_path)
     events = detect_exits(segments, features, config)
+    for event in events:
+        if event["type"] == "bed_exit":
+            event_decision = decide_bed_exit(event, config["alerts"])
+            event["decision"] = event_decision["decision"]
+            event["decision_rule"] = event_decision["rule"]
+            event["decision_reason"] = event_decision["reason"]
+            event["decision_note"] = event_decision["note"]
     video_path = Path(config["video"])
     if not video_path.is_absolute():
         video_path = config_path.parent / video_path
@@ -80,6 +88,12 @@ def main() -> None:
             "bed_return": sum(event["type"] == "bed_return" for event in events),
         },
         "events": events,
+        "final_decision": evaluate_decision(
+            segments,
+            events,
+            config["alerts"],
+            video_duration=video_duration,
+        ),
         "duration_summary": {
             "duration_by_state_sec": durations,
             "time_in_bed_sec": time_in_bed,

@@ -21,6 +21,8 @@ state_scoring:
   low_hip_knee_ratio: 0.16
   high_hip_knee_ratio: 0.24
   high_bed_fraction: 0.5
+  floor_bed_fraction_max: 0.25
+  floor_torso_angle_min_deg: 60
   low_speed: 0.25
   visibility_unknown: 0.45
 in_bed_states:
@@ -34,6 +36,30 @@ events:
   return_sit_sec: 2
   return_lie_sec: 5
   out_of_view_exit_sec: 10
+alerts:
+  # Assumptions for demonstration only; these are not clinically validated.
+  # A few minutes of edge sitting can be normal (e.g. putting on slippers);
+  # a very long duration may indicate dizziness, confusion, or difficulty standing.
+  edge_sit_monitor_sec: 300
+  # Continuous UNKNOWN for this long is uncertain, so log/show MONITOR without paging.
+  unknown_monitor_sec: 30
+  # Low-confidence exits are uncertain and should be MONITOR, not caregiver ALERT.
+  exit_low_conf: 0.6
+  # A toilet visit may take 5-15 minutes; much longer can raise fall risk.
+  # Night limits are stricter because the person may be unsteady and less observed.
+  out_of_bed_alert_sec:
+    day: 1800
+    night: 900
+  # Out of view is stricter than out of bed because the system cannot observe the person.
+  out_of_view_alert_sec:
+    day: 900
+    night: 600
+  # Floor lying is potentially dangerous; 10 seconds filters brief bending/pickups.
+  floor_lying_alert_sec: 10
+  # Local-clock interval used to select day/night thresholds.
+  night_window: ["22:00", "06:00"]
+  # The source video has no clock metadata; use this assumed local start time.
+  video_start_clock: "02:00"
 smoothing:
   self_probability: 0.98
   unknown_probability: 0.005

@@ -1,0 +1,56 @@
+video: data/clip.mp4
+sample_fps: 5
+pose_model: yolov8m-pose.pt
+bed_polygon:
+- - 734
+  - 573
+- - 1196
+  - 474
+- - 1918
+  - 740
+- - 1454
+  - 1072
+thresholds:
+  lying_angle_deg: 60
+  standing_hip_ratio: 0.55
+  walk_speed: 0.25
+  min_kp_conf: 0.3
+  unknown_score: 0.3
+state_scoring:
+  upright_angle_deg: 45
+  low_hip_knee_ratio: 0.16
+  high_hip_knee_ratio: 0.24
+  high_bed_fraction: 0.5
+  floor_bed_fraction_max: 0.25
+  floor_torso_angle_min_deg: 60
+  low_speed: 0.25
+  visibility_unknown: 0.45
+in_bed_states:
+- LYING_IN_BED
+- SITTING_ON_BED
+events:
+  exit_away_sec: 4
+  exit_away_dist: 0.8
+  return_approach_dist: 0.8
+  unknown_hold_sec: 4
+  return_sit_sec: 2
+  return_lie_sec: 5
+  out_of_view_exit_sec: 10
+alerts:
+  # Short demonstration values only; not clinically validated or production settings.
+  edge_sit_monitor_sec: 20
+  unknown_monitor_sec: 5
+  exit_low_conf: 0.6
+  out_of_bed_alert_sec:
+    day: 90
+    night: 45
+  out_of_view_alert_sec:
+    day: 45
+    night: 30
+  floor_lying_alert_sec: 3
+  night_window: ["22:00", "06:00"]
+  video_start_clock: "02:00"
+smoothing:
+  self_probability: 0.98
+  unknown_probability: 0.005
+min_segment_sec: 2.0

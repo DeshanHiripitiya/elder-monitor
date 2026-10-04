@@ -54,6 +54,7 @@ def main() -> None:
         raise ValueError("Events JSON must contain a list")
     summary = json.loads(args.summary.read_text(encoding="utf-8"))
     duration_summary = summary.get("duration_summary", {})
+    final_decision = summary.get("final_decision", {})
     duration_by_state = duration_summary.get("duration_by_state_sec", {})
     duration_lines = [
         "DURATION SUMMARY",
@@ -73,6 +74,16 @@ def main() -> None:
             f"{'PASS' if duration_summary.get('duration_sum_check_passed') else 'FAIL'}"
         ),
     ]
+    if final_decision:
+        duration_lines.extend(
+            [
+                (
+                    f"decision: {final_decision.get('decision', 'NORMAL')} "
+                    f"({final_decision.get('rule', 'no_rule_matched')})"
+                ),
+                f"reason: {final_decision.get('reason', 'No rule matched.')}",
+            ]
+        )
     if duration_by_state:
         duration_lines.append(
             "states: "
