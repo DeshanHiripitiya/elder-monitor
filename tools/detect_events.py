@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import Any
 
 import pandas as pd
+import cv2
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 if str(PROJECT_ROOT) not in sys.path:
@@ -40,12 +41,57 @@ def main() -> None:
     segments = pd.read_parquet(segments_path).to_dict("records")
     features = pd.read_parquet(features_path)
     events = detect_exits(segments, features, config)
+    video_path = Path(config["video"])
+    if not video_path.is_absolute():
+        video_path = config_path.parent / video_path
+    capture = cv2.VideoCapture(str(video_path))
+    fps = capture.get(cv2.CAP_PROP_FPS)
+    frame_count = capture.get(cv2.CAP_PROP_FRAME_COUNT)
+    capture.release()
+    video_duration = frame_count / fps if fps > 0 else float(segments[-1]["end"])
+    durations: dict[str, float] = {}
+    for segment in segments:
+        state = str(segment["state"])
+        durations[state] = durations.get(state, 0.0) + (
+            float(segment["end"]) - float(segment["start"])
+        )
+    in_bed_states = set(config["in_bed_states"])
+    time_in_bed = sum(
+        duration for state, duration in durations.items() if state in in_bed_states
+    )
+    time_out_of_bed = sum(
+        duration for state, duration in durations.items() if state not in in_bed_states
+    )
+    exit_times = [float(event["confirmed_time"]) for event in events if event["type"] == "bed_exit"]
+    return_times = [float(event["confirmed_time"]) for event in events if event["type"] == "bed_return"]
+    out_periods = []
+    for index, exit_time in enumerate(exit_times):
+        next_return = next((value for value in return_times if value >= exit_time), video_duration)
+        out_periods.append(next_return - exit_time)
+    duration_sum = sum(durations.values())
+    if abs(duration_sum - video_duration) >= 1.0:
+        raise ValueError(
+            f"Duration sum mismatch: {duration_sum:.3f}s vs video {video_duration:.3f}s"
+        )
+    final_state = str(segments[-1]["state"])
     summary: dict[str, Any] = {
         "event_counts": {
             "bed_exit": sum(event["type"] == "bed_exit" for event in events),
             "bed_return": sum(event["type"] == "bed_return" for event in events),
         },
         "events": events,
+        "duration_summary": {
+            "duration_by_state_sec": durations,
+            "time_in_bed_sec": time_in_bed,
+            "time_out_of_bed_sec": time_out_of_bed,
+            "longest_out_of_bed_period_sec": max(out_periods, default=0.0),
+            "final_state": final_state,
+            "bed_exit_count": sum(event["type"] == "bed_exit" for event in events),
+            "bed_return_count": sum(event["type"] == "bed_return" for event in events),
+            "video_duration_sec": video_duration,
+            "duration_sum_sec": duration_sum,
+            "duration_sum_check_passed": abs(duration_sum - video_duration) < 1.0,
+        },
         "configuration": config["events"],
     }
     events_path.parent.mkdir(parents=True, exist_ok=True)

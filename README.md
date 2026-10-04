@@ -167,7 +167,9 @@ sidecar instead:
 This creates [`data/debug_overlay_events.vtt`](data/debug_overlay_events.vtt).
 Load it as a subtitle/caption track alongside
 [`data/debug_overlay.mp4`](data/debug_overlay.mp4) in a player that supports
-WebVTT. It includes both `bed_exit` and `bed_return` labels.
+WebVTT. It includes the duration summary for the first ten seconds and both
+`bed_exit` and `bed_return` labels at their event times. Regenerate only this
+small sidecar after changing event or duration outputs.
 
 The rendering stage reuses the saved Parquet outputs and does not rerun pose
 inference. The result is [`data/debug_overlay.mp4`](data/debug_overlay.mp4).
@@ -185,6 +187,18 @@ torso-lengths. Returning to an in-bed state cancels the candidate. Short
 If the person disappears directly after an in-bed segment, an
 `out_of_view_exit_sec` duration produces a lower-confidence event with the
 note `via_out_of_view`.
+
+Event confidence is an explainable heuristic, not a calibrated probability:
+it is the minimum mean confidence of the segments involved in the event,
+multiplied by `0.8` when an `UNKNOWN` segment occurs inside the event
+interval. Out-of-view exits receive an additional `0.8` penalty because the
+away period is not visually observed.
+
+The event detector also writes a boundary-based duration summary. It sums
+`segment.end - segment.start` for every timeline segment, reports time in and
+out of bed, the longest exit-to-return interval, the final state, and event
+counts. It verifies that the segment-duration sum matches the source video
+duration within one second.
 
 After a confirmed exit, the detector looks for a return only while in `OUT`.
 When the person comes within `events.return_approach_dist` torso lengths of

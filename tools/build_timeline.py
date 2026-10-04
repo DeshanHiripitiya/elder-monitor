@@ -117,6 +117,53 @@ def collapse_adjacent_segments(segments: list[dict[str, Any]]) -> list[dict[str,
     return collapsed
 
 
+def make_contiguous(
+    segments: list[dict[str, Any]],
+    video_duration: float,
+) -> list[dict[str, Any]]:
+    """Clamp segments to the video and fill gaps with UNKNOWN."""
+    if video_duration <= 0:
+        return []
+    normalized: list[dict[str, Any]] = []
+    cursor = 0.0
+    for source in sorted(segments, key=lambda item: float(item["start"])):
+        start = max(0.0, min(video_duration, float(source["start"])))
+        end = max(start, min(video_duration, float(source["end"])))
+        if end <= start:
+            continue
+        if start > cursor:
+            normalized.append(
+                {
+                    "start": cursor,
+                    "end": start,
+                    "state": "UNKNOWN",
+                    "mean_confidence": 0.0,
+                }
+            )
+        if start < cursor:
+            start = cursor
+        if end > start:
+            normalized.append(
+                {
+                    "start": start,
+                    "end": end,
+                    "state": source["state"],
+                    "mean_confidence": float(source["mean_confidence"]),
+                }
+            )
+            cursor = end
+    if cursor < video_duration:
+        normalized.append(
+            {
+                "start": cursor,
+                "end": video_duration,
+                "state": "UNKNOWN",
+                "mean_confidence": 0.0,
+            }
+        )
+    return collapse_adjacent_segments(normalized)
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
@@ -166,7 +213,15 @@ def main() -> None:
         float(config["min_segment_sec"]),
     )
     segments = collapse_adjacent_segments(segments)
-    segments[-1]["end"] = video_duration
+    segments = make_contiguous(segments, video_duration)
+    if not segments:
+        raise ValueError("Unable to build a timeline covering the video")
+    duration_sum = sum(segment["end"] - segment["start"] for segment in segments)
+    if abs(duration_sum - video_duration) >= 1.0:
+        raise ValueError(
+            f"Timeline duration mismatch: {duration_sum:.3f}s vs "
+            f"video {video_duration:.3f}s"
+        )
     for segment in segments:
         segment.pop("_start_index", None)
         segment.pop("_end_index", None)

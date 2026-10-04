@@ -78,7 +78,8 @@ class ExitDetectionTests(unittest.TestCase):
             CONFIG,
         )
         self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["confidence"], "low")
+        self.assertIsInstance(result[0]["confidence"], float)
+        self.assertLess(result[0]["confidence"], 1.0)
         self.assertEqual(result[0]["note"], "via_out_of_view")
 
     def test_exit_then_return_confirms_bed_return(self):

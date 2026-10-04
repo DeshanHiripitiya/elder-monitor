@@ -7,6 +7,25 @@ from typing import Any
 import pandas as pd
 
 
+def event_confidence(
+    segments: list[dict[str, Any]],
+    start_time: float,
+    end_time: float,
+) -> float:
+    """Return an explainable minimum-segment confidence heuristic."""
+    relevant = [
+        segment
+        for segment in segments
+        if float(segment["end"]) > start_time
+        and float(segment["start"]) < end_time
+    ]
+    if not relevant:
+        return 0.0
+    minimum = min(float(segment["mean_confidence"]) for segment in relevant)
+    has_unknown = any(str(segment["state"]) == "UNKNOWN" for segment in relevant)
+    return minimum * (0.8 if has_unknown else 1.0)
+
+
 def detect_exits(
     segments: list[dict[str, Any]],
     features: pd.DataFrame,
@@ -110,7 +129,9 @@ def detect_exits(
                             "confirmed_time": row_time,
                             "previous_state": "OUT",
                             "current_state": "LYING_IN_BED",
-                            "confidence": float(segment["mean_confidence"]),
+                            "confidence": event_confidence(
+                                ordered, float(approach_start), row_time
+                            ),
                         }
                     )
                     phase = "IN_BED"
@@ -170,7 +191,11 @@ def detect_exits(
                         "confirmed_time": row_time,
                         "previous_state": previous_in_bed_state,
                         "current_state": state,
-                        "confidence": "low",
+                        "confidence": event_confidence(
+                            ordered,
+                            float(candidate_start),
+                            row_time,
+                        ) * 0.8,
                         "note": "via_out_of_view",
                     }
                 )
@@ -188,7 +213,11 @@ def detect_exits(
                         "confirmed_time": row_time,
                         "previous_state": previous_in_bed_state,
                         "current_state": state,
-                        "confidence": float(segment["mean_confidence"]),
+                        "confidence": event_confidence(
+                            ordered,
+                            float(candidate_start),
+                            row_time,
+                        ),
                     }
                 )
                 phase = "OUT"
