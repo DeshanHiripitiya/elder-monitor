@@ -73,6 +73,11 @@ plot [`data/feature_diagnostics.png`](data/feature_diagnostics.png). The plot
 shows torso angle and the fraction of visible keypoints inside the bed polygon
 over time. Feature output is protected against accidental overwrites.
 
+The normalized `hip_knee_ratio` feature is computed from each visible
+hip-knee pair as `abs(knee_y - hip_y) / bbox_height`. Both visible sides are
+averaged; one side is sufficient. Ankle keypoints remain available for the
+legacy `hip_height_ratio` feature but are not required for posture scoring.
+
 ![Feature diagnostics](data/feature_diagnostics.png)
 
 ## Score per-frame states

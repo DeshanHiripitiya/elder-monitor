@@ -103,7 +103,7 @@ def score_row(row: pd.Series, config: dict[str, Any]) -> np.ndarray:
     aspect = finite(row["bbox_aspect"])
     bed_fraction = finite(row["kp_in_bed_frac"])
     hip_in_bed = finite(row["hip_in_bed"])
-    hip_height = finite(row["hip_height_ratio"])
+    hip_height = finite(row["hip_knee_ratio"])
     speed = finite(row["speed"])
     visibility = finite(row["vis"])
 
@@ -118,13 +118,13 @@ def score_row(row: pd.Series, config: dict[str, Any]) -> np.ndarray:
     lying_shape = clip01((aspect - 0.8) / 1.2)
     bed_presence = bed_fraction
     sitting_height = clip01(
-        (scoring["low_hip_height_ratio"] - hip_height)
-        / max(scoring["low_hip_height_ratio"], 1e-6)
+        (scoring["low_hip_knee_ratio"] - hip_height)
+        / max(scoring["low_hip_knee_ratio"], 1e-6)
     )
     standing_height = clip01(
-        (hip_height - scoring["low_hip_height_ratio"])
+        (hip_height - scoring["low_hip_knee_ratio"])
         / max(
-            scoring["high_hip_height_ratio"] - scoring["low_hip_height_ratio"],
+            scoring["high_hip_knee_ratio"] - scoring["low_hip_knee_ratio"],
             1e-6,
         )
     )

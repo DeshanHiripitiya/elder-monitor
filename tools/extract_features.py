@@ -52,6 +52,7 @@ def extract_row(
         "hip_in_bed": np.nan,
         "kp_in_bed_frac": np.nan,
         "hip_height_ratio": np.nan,
+        "hip_knee_ratio": np.nan,
         "speed": np.nan,
         "vis": np.nan,
     }
@@ -80,6 +81,14 @@ def extract_row(
     ankles = point_mean(keypoints, ANKLES, min_conf)
     if bbox[3] > bbox[1]:
         output["bbox_aspect"] = float((bbox[2] - bbox[0]) / (bbox[3] - bbox[1]))
+        bbox_height = bbox[3] - bbox[1]
+        hip_knee_ratios = [
+            abs(float(keypoints[knee, 1] - keypoints[hip, 1])) / bbox_height
+            for hip, knee in zip(HIPS, KNEES)
+            if keypoints[hip, 2] > min_conf and keypoints[knee, 2] > min_conf
+        ]
+        if hip_knee_ratios:
+            output["hip_knee_ratio"] = float(np.mean(hip_knee_ratios))
 
     torso_length = None
     if shoulders is not None and hips is not None:

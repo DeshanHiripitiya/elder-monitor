@@ -31,8 +31,8 @@ thresholds:
   unknown_score: 0.30
 state_scoring:
   upright_angle_deg: 45
-  low_hip_height_ratio: 0.48
-  high_hip_height_ratio: 0.55
+  low_hip_knee_ratio: 0.16
+  high_hip_knee_ratio: 0.24
   high_bed_fraction: 0.5
   low_speed: 0.25
   visibility_unknown: 0.45
