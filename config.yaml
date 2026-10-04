@@ -1,0 +1,42 @@
+video: data/clip.mp4
+sample_fps: 5
+pose_model: yolov8m-pose.pt
+bed_polygon:
+- - 774
+  - 586
+- - 1210
+  - 496
+- - 1905
+  - 738
+- - 1467
+  - 1072
+chair_polygon:
+- - 432
+  - 464
+- - 456
+  - 735
+- - 588
+  - 876
+- - 856
+  - 788
+- - 747
+  - 678
+- - 686
+  - 428
+thresholds:
+  lying_angle_deg: 60
+  standing_hip_ratio: 0.55
+  walk_speed: 0.25
+  min_kp_conf: 0.3
+  unknown_score: 0.30
+state_scoring:
+  upright_angle_deg: 45
+  low_hip_height_ratio: 0.48
+  high_hip_height_ratio: 0.55
+  high_bed_fraction: 0.5
+  low_speed: 0.25
+  visibility_unknown: 0.45
+smoothing:
+  self_probability: 0.98
+  unknown_probability: 0.005
+min_segment_sec: 2.0
