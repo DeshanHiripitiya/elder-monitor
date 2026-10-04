@@ -67,6 +67,9 @@ The normalized `hip_knee_ratio` feature is computed from each visible
 hip-knee pair as `abs(knee_y - hip_y) / bbox_height`. Both visible sides are
 averaged; one side is sufficient. Ankle keypoints remain available for the
 legacy `hip_height_ratio` feature but are not required for posture scoring.
+The `dist_to_bed` feature is zero when the hip is inside the bed polygon and
+otherwise stores the signed polygon-edge distance divided by torso length.
+It distinguishes standing beside the bed from standing farther away.
 
 ![Feature diagnostics](data/feature_diagnostics.png)
 
@@ -128,7 +131,8 @@ video duration.
 ## Render a visual debug video
 
 Render the original clip with the bed polygon, timestamp, smoothed state,
-state confidence, and the 17 frozen COCO pose keypoints:
+state confidence, normalized `dist_to_bed`, and the 17 frozen COCO pose
+keypoints:
 
 ```powershell
 .\.venv\Scripts\python.exe tools\render_debug_video.py --overwrite
@@ -140,6 +144,11 @@ confidence, yellow points are moderate, and gray points are below
 that confidence threshold. Because raw pose data is stored at 5 FPS while the
 video is 30 FPS, the most recent sampled pose is held until the next sample;
 the overlay marks its source timestamp as `pose sample t=...`.
+
+The header also shows `dist_to_bed` in torso lengths. It is `0.00` while the
+hip is inside the bed polygon and increases as the hip moves away from the
+bed. The value is read from [`data/features.parquet`](data/features.parquet),
+so rendering does not rerun pose inference.
 
 The rendering stage reuses the saved Parquet outputs and does not rerun pose
 inference. The result is [`data/debug_overlay.mp4`](data/debug_overlay.mp4).

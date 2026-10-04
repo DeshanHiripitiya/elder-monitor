@@ -55,6 +55,7 @@ def draw_overlay(
     state: str,
     confidence: float,
     timestamp: float,
+    dist_to_bed: float | None,
     keypoints: np.ndarray | None,
     pose_timestamp: float | None,
     min_kp_conf: float,
@@ -127,8 +128,13 @@ def draw_overlay(
                 cv2.LINE_AA,
             )
 
+    distance_label = (
+        f"dist_to_bed={dist_to_bed:.2f}"
+        if dist_to_bed is not None
+        else "dist_to_bed=n/a"
+    )
     label = f"{state}  score={confidence:.2f}"
-    cv2.rectangle(output, (20, 20), (620, 78), (0, 0, 0), -1)
+    cv2.rectangle(output, (20, 20), (760, 108), (0, 0, 0), -1)
     cv2.putText(
         output,
         label,
@@ -136,6 +142,16 @@ def draw_overlay(
         cv2.FONT_HERSHEY_SIMPLEX,
         0.9,
         (255, 255, 255),
+        2,
+        cv2.LINE_AA,
+    )
+    cv2.putText(
+        output,
+        distance_label,
+        (35, 95),
+        cv2.FONT_HERSHEY_SIMPLEX,
+        0.62,
+        (0, 220, 255),
         2,
         cv2.LINE_AA,
     )
@@ -157,6 +173,7 @@ def main() -> None:
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
     parser.add_argument("--states", type=Path, default=Path("data/smoothed_states.parquet"))
     parser.add_argument("--scores", type=Path, default=Path("data/state_scores.parquet"))
+    parser.add_argument("--features", type=Path, default=Path("data/features.parquet"))
     parser.add_argument("--pose", type=Path, default=Path("data/raw_pose.parquet"))
     parser.add_argument("--output", type=Path, default=Path("data/debug_overlay.mp4"))
     parser.add_argument("--overwrite", action="store_true")
@@ -173,10 +190,14 @@ def main() -> None:
     scores_path = args.scores if args.scores.is_absolute() else config_path.parent / args.scores
     states = pd.read_parquet(states_path).set_index("frame_idx")
     scores = pd.read_parquet(scores_path).set_index("frame_idx")
+    features_path = args.features if args.features.is_absolute() else config_path.parent / args.features
+    features = pd.read_parquet(features_path).set_index("frame_idx")
     pose_path = args.pose if args.pose.is_absolute() else config_path.parent / args.pose
     pose = pd.read_parquet(pose_path).set_index("frame_idx")
     if not states.index.equals(scores.index):
         raise ValueError("State and score files do not have matching frame indices")
+    if not states.index.equals(features.index):
+        raise ValueError("State and feature files do not have matching frame indices")
 
     polygon = np.asarray(config["bed_polygon"], dtype=np.int32).reshape(-1, 1, 2)
     capture = cv2.VideoCapture(str(video_path))
@@ -202,6 +223,7 @@ def main() -> None:
 
     current_state = "UNKNOWN"
     current_confidence = 0.0
+    current_dist_to_bed: float | None = None
     current_keypoints: np.ndarray | None = None
     pose_timestamp: float | None = None
     min_kp_conf = float(config["thresholds"]["min_kp_conf"])
@@ -215,6 +237,12 @@ def main() -> None:
                 current_state = str(states.loc[frame_idx, "smoothed_state"])
                 current_confidence = float(
                     scores.loc[frame_idx, current_state]
+                )
+                raw_distance = features.loc[frame_idx, "dist_to_bed"]
+                current_dist_to_bed = (
+                    float(raw_distance)
+                    if pd.notna(raw_distance)
+                    else None
                 )
             if frame_idx in pose.index and bool(pose.loc[frame_idx, "present"]):
                 raw_keypoints = pose.loc[frame_idx, "keypoints"]
@@ -232,6 +260,7 @@ def main() -> None:
                     current_state,
                     current_confidence,
                     timestamp,
+                    current_dist_to_bed,
                     current_keypoints,
                     pose_timestamp,
                     min_kp_conf,

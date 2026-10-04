@@ -50,6 +50,7 @@ def extract_row(
         "torso_angle": np.nan,
         "bbox_aspect": np.nan,
         "hip_in_bed": np.nan,
+        "dist_to_bed": np.nan,
         "kp_in_bed_frac": np.nan,
         "hip_height_ratio": np.nan,
         "hip_knee_ratio": np.nan,
@@ -97,6 +98,16 @@ def extract_row(
         if torso_length > 0:
             output["torso_angle"] = float(np.degrees(np.arctan2(abs(torso[0]), abs(torso[1]))))
             output["hip_in_bed"] = point_in_polygon(hips, polygon)
+            if len(polygon) >= 3:
+                signed_distance = cv2.pointPolygonTest(
+                    polygon,
+                    (float(hips[0]), float(hips[1])),
+                    True,
+                )
+                output["dist_to_bed"] = max(
+                    0.0,
+                    -float(signed_distance) / torso_length,
+                )
             if previous_hip is not None and previous_time is not None:
                 elapsed = float(row["t"]) - previous_time
                 if elapsed > 0:
@@ -109,7 +120,7 @@ def extract_row(
 
 
 def save_diagnostic_plot(features: pd.DataFrame, output_path: Path) -> None:
-    figure, axes = plt.subplots(2, 1, figsize=(12, 7), sharex=True)
+    figure, axes = plt.subplots(3, 1, figsize=(12, 9), sharex=True)
     axes[0].plot(features["t"], features["torso_angle"], linewidth=1)
     axes[0].set_ylabel("Torso angle (deg)")
     axes[0].grid(alpha=0.3)
@@ -118,6 +129,10 @@ def save_diagnostic_plot(features: pd.DataFrame, output_path: Path) -> None:
     axes[1].set_ylabel("Keypoints in bed")
     axes[1].set_ylim(-0.05, 1.05)
     axes[1].grid(alpha=0.3)
+    axes[2].plot(features["t"], features["dist_to_bed"], linewidth=1)
+    axes[2].set_xlabel("Time (s)")
+    axes[2].set_ylabel("Distance to bed (torso lengths)")
+    axes[2].grid(alpha=0.3)
     figure.tight_layout()
     figure.savefig(output_path, dpi=150)
     plt.close(figure)

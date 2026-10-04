@@ -486,3 +486,162 @@ Run:
 The human-readable result is
 [`data/timeline.txt`](data/timeline.txt), and the structured result is
 [`data/timeline.parquet`](data/timeline.parquet).
+
+## 9. Continuation: posture calibration and current implementation
+
+This section records the changes made after the original pipeline was
+implemented. The earlier sections are kept unchanged as historical notes.
+
+### 9.1 Why sitting and standing were initially classified as UNKNOWN
+
+The first posture scorer used a product of soft conditions:
+
+```python
+standing_score = upright * standing_height * stillness
+```
+
+The height term depended on `hip_height_ratio`, which was calculated from the
+vertical distance between the hip and ankle keypoints. This caused two
+problems:
+
+1. Ankles were frequently hidden by furniture, the edge of the frame, or
+   poor lighting.
+2. A low-confidence ankle made the entire feature unavailable. Missing values
+   were then treated as zero by the scorer, so the complete standing score
+   became zero.
+
+The same dependency affected sitting. Even when the hip was clearly inside the
+bed polygon and the torso was upright, the sitting score could be weak enough
+for the `UNKNOWN` fallback to win.
+
+### 9.2 Replacing ankle-dependent posture geometry
+
+The feature extractor now calculates `hip_knee_ratio` from the hip and knee
+keypoints:
+
+```text
+hip_knee_ratio = abs(knee_y - hip_y) / bbox_height
+```
+
+The value is calculated separately for the left and right hip-knee pairs. If
+both pairs pass `thresholds.min_kp_conf`, their values are averaged. If only
+one side is visible, the available side is used.
+
+This is normalized by bounding-box height, so it is less affected by the
+patient moving closer to or farther from the camera. Knees are more useful
+than ankles for this posture distinction because they are usually visible
+when a person is seated, even when the feet are occluded.
+
+Ankle points remain available for the legacy `hip_height_ratio` feature, but
+ankle visibility is no longer required for standing or sitting classification.
+
+### 9.3 Configuring the new posture feature
+
+The posture thresholds are kept in [`config.yaml`](config.yaml):
+
+```yaml
+state_scoring:
+  upright_angle_deg: 45
+  low_hip_knee_ratio: 0.16
+  high_hip_knee_ratio: 0.24
+  low_speed: 0.25
+  visibility_unknown: 0.45
+```
+
+The sitting height score uses the calibrated range exactly as follows:
+
+```python
+sitting_height = clip01(
+    (high_hip_knee_ratio - hip_knee_ratio)
+    / (high_hip_knee_ratio - low_hip_knee_ratio)
+)
+```
+
+This means a lower normalized hip-knee ratio produces stronger sitting
+evidence, while a ratio at or above the high threshold produces no sitting
+height evidence. Standing uses the complementary increasing range between the
+same low and high thresholds.
+
+### 9.4 How the change was tested
+
+The expensive pose extraction was not rerun. The existing
+[`data/raw_pose.parquet`](data/raw_pose.parquet) was reused, and only the
+downstream feature and classification stages were regenerated:
+
+```powershell
+.\.venv\Scripts\python.exe tools\extract_features.py --overwrite
+.\.venv\Scripts\python.exe tools\score_states.py --overwrite
+.\.venv\Scripts\python.exe tools\smooth_states.py --overwrite
+.\.venv\Scripts\python.exe tools\build_timeline.py --overwrite
+```
+
+The new feature was available in:
+
+```text
+222/230 labeled standing frames
+403/405 labeled sitting-on-bed frames
+```
+
+After applying the new sitting formula:
+
+```text
+Frame-level accuracy:  72.1% (1,442/2,000)
+Smoothed accuracy:     75.0% (1,500/2,000)
+```
+
+The timeline duration remained correct at approximately 401.23 seconds, so
+the posture change did not break timestamp or segment accounting.
+
+### 9.5 Removing unused chair configuration
+
+The project originally supported both bed and chair polygons. The current
+implementation focuses on the mattress location, so the unused chair
+configuration was removed from [`config.yaml`](config.yaml).
+
+The selector in [`tools/draw_bed.py`](tools/draw_bed.py) is now bed-only:
+
+- `--zone` was removed.
+- Selected points are always saved to `bed_polygon`.
+- The default overlay is always `data/bed_polygon_overlay.png`.
+- Chair-specific CLI behavior was removed.
+
+This avoids maintaining a configuration value that is not consumed by feature
+extraction or state scoring.
+
+### 9.6 Current fast validation method
+
+Generating the full debug video is unnecessary during every threshold
+experiment. The fast validation loop is:
+
+```powershell
+.\.venv\Scripts\python.exe tools\score_states.py --overwrite
+.\.venv\Scripts\python.exe tools\smooth_states.py --overwrite
+.\.venv\Scripts\python.exe tools\build_timeline.py --overwrite
+Get-Content data\timeline.txt
+```
+
+This checks the confusion matrix, smoothed accuracy, state counts, segment
+order, and total duration without creating a new video. The visual overlay is
+generated only after the numerical results and timeline are satisfactory.
+
+### 9.7 Current limitations and prevention
+
+The current rules are calibrated for this single-person clip. They are not a
+general human-action model. Remaining risks include:
+
+- Incorrect keypoints during heavy occlusion.
+- Track-ID changes in multi-person footage.
+- Confusion between walking and standing when speed is noisy.
+- Confusion between sitting and lying when the patient leans strongly.
+- Ground-truth interval errors or overlaps.
+
+The main prevention practices are:
+
+- Freeze raw pose output before tuning downstream logic.
+- Keep every threshold in [`config.yaml`](config.yaml).
+- Compare frame-level and smoothed metrics after every change.
+- Inspect the confusion matrix rather than relying only on overall accuracy.
+- Use normalized geometry instead of absolute pixel distances.
+- Validate the final timeline duration against the source video.
+- Use the debug overlay for final visual confirmation, not for every
+  experiment.

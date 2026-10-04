@@ -23,6 +23,15 @@ state_scoring:
   high_bed_fraction: 0.5
   low_speed: 0.25
   visibility_unknown: 0.45
+in_bed_states:
+  - LYING_IN_BED
+  - SITTING_ON_BED
+events:
+  exit_away_sec: 4
+  exit_away_dist: 0.8
+  return_sit_sec: 2
+  return_lie_sec: 5
+  out_of_view_exit_sec: 10
 smoothing:
   self_probability: 0.98
   unknown_probability: 0.005
