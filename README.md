@@ -152,3 +152,29 @@ so rendering does not rerun pose inference.
 
 The rendering stage reuses the saved Parquet outputs and does not rerun pose
 inference. The result is [`data/debug_overlay.mp4`](data/debug_overlay.mp4).
+
+## Detect bed-exit events
+
+Bed exits are detected from the smoothed timeline and normalized
+`dist_to_bed` feature. A `STANDING` or `WALKING` segment creates a candidate.
+The candidate becomes a confirmed `bed_exit` only after the person remains at
+least `events.exit_away_sec` seconds beyond `events.exit_away_dist`
+torso-lengths. Returning to an in-bed state cancels the candidate. Short
+`UNKNOWN` gaps preserve the current phase according to
+`events.unknown_hold_sec`.
+
+If the person disappears directly after an in-bed segment, an
+`out_of_view_exit_sec` duration produces a lower-confidence event with the
+note `via_out_of_view`.
+
+Run this lightweight event stage without rerunning pose inference or creating
+a debug video:
+
+```powershell
+.\.venv\Scripts\python.exe tools\detect_events.py --overwrite
+```
+
+Outputs:
+
+- [`data/events.json`](data/events.json): detected event list
+- [`data/summary.json`](data/summary.json): event counts, events, and event configuration
