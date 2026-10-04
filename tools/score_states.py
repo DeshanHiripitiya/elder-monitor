@@ -118,8 +118,11 @@ def score_row(row: pd.Series, config: dict[str, Any]) -> np.ndarray:
     lying_shape = clip01((aspect - 0.8) / 1.2)
     bed_presence = bed_fraction
     sitting_height = clip01(
-        (scoring["low_hip_knee_ratio"] - hip_height)
-        / max(scoring["low_hip_knee_ratio"], 1e-6)
+        (scoring["high_hip_knee_ratio"] - hip_height)
+        / max(
+            scoring["high_hip_knee_ratio"] - scoring["low_hip_knee_ratio"],
+            1e-6,
+        )
     )
     standing_height = clip01(
         (hip_height - scoring["low_hip_knee_ratio"])
