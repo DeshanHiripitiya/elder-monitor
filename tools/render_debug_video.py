@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -59,6 +60,7 @@ def draw_overlay(
     keypoints: np.ndarray | None,
     pose_timestamp: float | None,
     min_kp_conf: float,
+    event: dict[str, Any] | None = None,
 ) -> np.ndarray:
     output = frame.copy()
     if len(polygon) >= 3:
@@ -134,7 +136,29 @@ def draw_overlay(
         else "dist_to_bed=n/a"
     )
     label = f"{state}  score={confidence:.2f}"
-    cv2.rectangle(output, (20, 20), (760, 108), (0, 0, 0), -1)
+    event_lines: list[str] = []
+    if event is not None:
+        start_time = float(event["start_time"])
+        confirmed_time = float(event["confirmed_time"])
+        status = (
+            "CONFIRMED"
+            if timestamp >= confirmed_time
+            else "CANDIDATE"
+        )
+        event_lines = [
+            f"EVENT: {event['type']} [{status}]",
+            f"from {start_time:.1f}s -> confirmed {confirmed_time:.1f}s",
+            f"{event['previous_state']} -> {event['current_state']}",
+        ]
+        if isinstance(event.get("confidence"), (int, float)):
+            event_lines.append(f"event confidence={float(event['confidence']):.2f}")
+        elif event.get("confidence"):
+            event_lines.append(f"event confidence={event['confidence']}")
+        if event.get("note"):
+            event_lines.append(f"note: {event['note']}")
+
+    panel_bottom = max(108, 108 + 27 * len(event_lines))
+    cv2.rectangle(output, (20, 20), (900, panel_bottom), (0, 0, 0), -1)
     cv2.putText(
         output,
         label,
@@ -155,6 +179,17 @@ def draw_overlay(
         2,
         cv2.LINE_AA,
     )
+    for line_index, event_line in enumerate(event_lines):
+        cv2.putText(
+            output,
+            event_line,
+            (35, 135 + line_index * 27),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.58,
+            (0, 165, 255) if "CONFIRMED" in event_line else (0, 220, 255),
+            2,
+            cv2.LINE_AA,
+        )
     cv2.putText(
         output,
         f"t={timestamp:.1f}s",
@@ -175,6 +210,7 @@ def main() -> None:
     parser.add_argument("--scores", type=Path, default=Path("data/state_scores.parquet"))
     parser.add_argument("--features", type=Path, default=Path("data/features.parquet"))
     parser.add_argument("--pose", type=Path, default=Path("data/raw_pose.parquet"))
+    parser.add_argument("--events", type=Path, default=Path("data/events.json"))
     parser.add_argument("--output", type=Path, default=Path("data/debug_overlay.mp4"))
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
@@ -194,6 +230,12 @@ def main() -> None:
     features = pd.read_parquet(features_path).set_index("frame_idx")
     pose_path = args.pose if args.pose.is_absolute() else config_path.parent / args.pose
     pose = pd.read_parquet(pose_path).set_index("frame_idx")
+    events_path = args.events if args.events.is_absolute() else config_path.parent / args.events
+    events: list[dict[str, Any]] = []
+    if events_path.exists():
+        events = json.loads(events_path.read_text(encoding="utf-8"))
+        if not isinstance(events, list):
+            raise ValueError(f"Events file must contain a JSON list: {events_path}")
     if not states.index.equals(scores.index):
         raise ValueError("State and score files do not have matching frame indices")
     if not states.index.equals(features.index):
@@ -253,6 +295,15 @@ def main() -> None:
                 )
                 pose_timestamp = float(pose.loc[frame_idx, "t"])
             timestamp = frame_idx / fps
+            current_event = next(
+                (
+                    event
+                    for event in events
+                    if float(event["start_time"]) <= timestamp
+                    <= float(event["confirmed_time"]) + 5.0
+                ),
+                None,
+            )
             writer.write(
                 draw_overlay(
                     frame,
@@ -264,6 +315,7 @@ def main() -> None:
                     current_keypoints,
                     pose_timestamp,
                     min_kp_conf,
+                    current_event,
                 )
             )
             frame_idx += 1

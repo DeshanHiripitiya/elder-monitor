@@ -131,8 +131,8 @@ video duration.
 ## Render a visual debug video
 
 Render the original clip with the bed polygon, timestamp, smoothed state,
-state confidence, normalized `dist_to_bed`, and the 17 frozen COCO pose
-keypoints:
+state confidence, normalized `dist_to_bed`, bed-exit event details, and the
+17 frozen COCO pose keypoints:
 
 ```powershell
 .\.venv\Scripts\python.exe tools\render_debug_video.py --overwrite
@@ -149,6 +149,12 @@ The header also shows `dist_to_bed` in torso lengths. It is `0.00` while the
 hip is inside the bed polygon and increases as the hip moves away from the
 bed. The value is read from [`data/features.parquet`](data/features.parquet),
 so rendering does not rerun pose inference.
+
+When [`data/events.json`](data/events.json) exists, the renderer adds an event
+panel around each event. The panel shows the event type, `CANDIDATE` or
+`CONFIRMED` status, start and confirmation times, previous/current states,
+event confidence, and optional notes. It remains visible for five seconds
+after confirmation. Use `--events` to provide a different event JSON file.
 
 The rendering stage reuses the saved Parquet outputs and does not rerun pose
 inference. The result is [`data/debug_overlay.mp4`](data/debug_overlay.mp4).
