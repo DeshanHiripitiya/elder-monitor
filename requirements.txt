@@ -3,3 +3,4 @@ ultralytics
 PyYAML
 pandas
 pyarrow
+pytest

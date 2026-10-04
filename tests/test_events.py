@@ -1,8 +1,7 @@
-import unittest
-
 import pandas as pd
 
 from src.events import detect_exits
+from tools.build_timeline import make_contiguous
 
 
 CONFIG = {
@@ -19,9 +18,22 @@ CONFIG = {
 }
 
 
-def frames(states, distances=None, present=None):
-    distances = distances or [0.0] * len(states)
-    present = present or [True] * len(states)
+def make_segments(states, confidence=0.9):
+    """Create one-second hand-made segments; no video is needed."""
+    return [
+        {
+            "start": float(index),
+            "end": float(index + 1),
+            "state": state,
+            "mean_confidence": confidence,
+        }
+        for index, state in enumerate(states)
+    ]
+
+
+def make_features(states, distances=None, present=None):
+    distances = distances if distances is not None else [0.0] * len(states)
+    present = present if present is not None else [True] * len(states)
     return pd.DataFrame(
         {
             "t": [float(index) for index in range(len(states))],
@@ -31,93 +43,121 @@ def frames(states, distances=None, present=None):
     )
 
 
-def segments(states):
-    return [
-        {
-            "start": float(index),
-            "end": float(index + 1),
-            "state": state,
-            "mean_confidence": 0.9,
-        }
-        for index, state in enumerate(states)
+def event_types(states, distances=None, present=None):
+    result = detect_exits(
+        make_segments(states),
+        make_features(states, distances, present),
+        CONFIG,
+    )
+    return result, [event["type"] for event in result]
+
+
+def test_sit_up_only_does_not_create_exit():
+    states = ["LYING_IN_BED"] * 5 + ["SITTING_ON_BED"] * 60 + ["LYING_IN_BED"] * 5
+    result, types = event_types(states)
+
+    assert types == []
+    assert result == []
+
+
+def test_edge_sitting_for_sixty_seconds_does_not_create_exit():
+    states = ["LYING_IN_BED"] * 5 + ["SITTING_ON_BED"] * 60
+
+    result, types = event_types(states)
+
+    assert types == []
+    assert result == []
+
+
+def test_brief_three_second_stand_is_cancelled():
+    states = ["LYING_IN_BED"] * 5 + ["STANDING"] * 3 + ["SITTING_ON_BED"] * 5
+
+    result, types = event_types(states)
+
+    assert types == []
+    assert result == []
+
+
+def test_clean_exit_creates_one_exit():
+    states = (
+        ["LYING_IN_BED"] * 5
+        + ["SITTING_ON_BED"] * 2
+        + ["STANDING"] * 4
+        + ["WALKING"] * 6
+    )
+    distances = [0.0] * 7 + [1.0] * 10
+
+    result, types = event_types(states, distances)
+
+    assert types == ["bed_exit"]
+    assert result[0]["previous_state"] == "SITTING_ON_BED"
+    assert 0.0 < result[0]["confidence"] <= 0.9
+
+
+def test_exit_and_return_creates_one_exit_and_one_return():
+    states = (
+        ["LYING_IN_BED"] * 5
+        + ["SITTING_ON_BED"] * 2
+        + ["STANDING"] * 4
+        + ["WALKING"] * 8
+        + ["SITTING_ON_BED"] * 2
+        + ["LYING_IN_BED"] * 5
+    )
+    distances = [0.0] * 7 + [1.0] * 12 + [0.5] * 7
+
+    result, types = event_types(states, distances)
+
+    assert types == ["bed_exit", "bed_return"]
+    assert result[1]["previous_state"] == "OUT"
+    assert result[1]["current_state"] == "LYING_IN_BED"
+
+
+def test_out_of_view_for_thirty_seconds_creates_low_confidence_exit():
+    states = ["LYING_IN_BED"] * 5 + ["OUT_OF_BED"] * 30
+    present = [True] * 5 + [False] * 30
+
+    result, types = event_types(states, present=present)
+
+    assert types == ["bed_exit"]
+    assert result[0]["note"] == "via_out_of_view"
+    assert result[0]["confidence"] < 0.9
+
+
+def test_unknown_two_second_blip_does_not_create_exit():
+    states = ["LYING_IN_BED"] * 5 + ["UNKNOWN"] * 2 + ["LYING_IN_BED"] * 5
+
+    result, types = event_types(states)
+
+    assert types == []
+    assert result == []
+
+
+def test_fake_return_followed_by_walking_does_not_create_return():
+    states = (
+        ["LYING_IN_BED"] * 5
+        + ["STANDING"] * 5
+        + ["WALKING"] * 6
+        + ["SITTING_ON_BED"]
+        + ["WALKING"] * 5
+    )
+    distances = [0.0] * 5 + [1.0] * 11 + [0.5] * 6
+
+    result, types = event_types(states, distances)
+
+    assert types == ["bed_exit"]
+
+
+def test_contiguous_timeline_durations_sum_to_total():
+    segments = [
+        {"start": 1.0, "end": 3.0, "state": "LYING_IN_BED", "mean_confidence": 0.9},
+        {"start": 4.0, "end": 7.0, "state": "WALKING", "mean_confidence": 0.8},
     ]
 
+    normalized = make_contiguous(segments, video_duration=10.0)
+    duration_sum = sum(item["end"] - item["start"] for item in normalized)
 
-class ExitDetectionTests(unittest.TestCase):
-    def test_brief_stand_is_cancelled(self):
-        result = detect_exits(
-            segments(["LYING_IN_BED", "STANDING", "SITTING_ON_BED"]),
-            frames(["LYING_IN_BED", "STANDING", "SITTING_ON_BED"]),
-            CONFIG,
-        )
-        self.assertEqual(result, [])
-
-    def test_away_duration_confirms_exit(self):
-        states = ["LYING_IN_BED"] + ["STANDING"] * 5
-        result = detect_exits(
-            segments(states),
-            frames(states, [0.0] + [1.0] * 5),
-            CONFIG,
-        )
-        self.assertEqual(len(result), 1)
-        self.assertEqual(result[0]["type"], "bed_exit")
-        self.assertEqual(result[0]["previous_state"], "LYING_IN_BED")
-
-    def test_unknown_gap_does_not_cancel_candidate(self):
-        states = ["LYING_IN_BED", "STANDING", "UNKNOWN", "UNKNOWN", "STANDING", "STANDING", "STANDING", "STANDING"]
-        distances = [0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
-        result = detect_exits(segments(states), frames(states, distances), CONFIG)
-        self.assertEqual(len(result), 1)
-
-    def test_out_of_view_exit_is_low_confidence(self):
-        states = ["LYING_IN_BED"] + ["OUT_OF_BED"] * 10
-        present = [True] + [False] * 10
-        result = detect_exits(
-            segments(states),
-            frames(states, present=present),
-            CONFIG,
-        )
-        self.assertEqual(len(result), 1)
-        self.assertIsInstance(result[0]["confidence"], float)
-        self.assertLess(result[0]["confidence"], 1.0)
-        self.assertEqual(result[0]["note"], "via_out_of_view")
-
-    def test_exit_then_return_confirms_bed_return(self):
-        states = (
-            ["LYING_IN_BED"]
-            + ["STANDING"] * 5
-            + ["STANDING"]
-            + ["SITTING_ON_BED"] * 2
-            + ["LYING_IN_BED"] * 5
-        )
-        distances = [0.0] + [1.0] * 5 + [0.5] * 8
-        result = detect_exits(
-            segments(states),
-            frames(states, distances),
-            CONFIG,
-        )
-        self.assertEqual(
-            [event["type"] for event in result],
-            ["bed_exit", "bed_return"],
-        )
-        self.assertEqual(result[1]["previous_state"], "OUT")
-        self.assertEqual(result[1]["current_state"], "LYING_IN_BED")
-
-    def test_sitting_then_walking_does_not_confirm_return(self):
-        states = (
-            ["LYING_IN_BED"]
-            + ["STANDING"] * 5
-            + ["SITTING_ON_BED"] * 3
-            + ["WALKING"] * 3
-        )
-        distances = [0.0] + [1.0] * 5 + [0.5] * 6
-        result = detect_exits(
-            segments(states),
-            frames(states, distances),
-            CONFIG,
-        )
-        self.assertEqual([event["type"] for event in result], ["bed_exit"])
-
-
-if __name__ == "__main__":
-    unittest.main()
+    assert normalized[0]["start"] == 0.0
+    assert normalized[-1]["end"] == 10.0
+    assert abs(duration_sum - 10.0) < 1.0
+    assert normalized[0]["state"] == "UNKNOWN"
+    assert normalized[2]["state"] == "UNKNOWN"
