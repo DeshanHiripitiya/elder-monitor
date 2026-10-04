@@ -401,6 +401,8 @@ cover 0.0–11.8 s, 18.2–88.2 s, 150.6–156.4 s, 174.6–180.8 s,
 190.8–199.8 s, 228.6–231.0 s, 314.8–347.2 s, and 359.6–378.2 s.
 The command prints trigger reasons and configured ceilings: 6 steps per case,
 2 VLM calls per case, 40 total VLM calls, and 6 frames per VLM call.
+Candidate-exit triggers require an earlier in-bed segment, so ordinary
+walking at the start of a clip does not become a false bed-exit case.
 
 All thresholds and call budgets live under `agent` in
 [`config.yaml`](config.yaml); the same agent settings are available in

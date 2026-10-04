@@ -54,10 +54,12 @@ def _candidate_exit_windows(
             last_in_bed_end = end
             continue
 
-        if candidate_start is None and state in {"STANDING", "WALKING"}:
-            candidate_start = (
-                last_in_bed_end if last_in_bed_end is not None else start
-            )
+        if (
+            candidate_start is None
+            and last_in_bed_end is not None
+            and state in {"STANDING", "WALKING", "OUT_OF_BED"}
+        ):
+            candidate_start = last_in_bed_end
             matching_exit = next(
                 (
                     event
