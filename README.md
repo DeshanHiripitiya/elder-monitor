@@ -218,3 +218,28 @@ Outputs:
 
 - [`data/events.json`](data/events.json): detected event list
 - [`data/summary.json`](data/summary.json): `bed_exit`/`bed_return` counts, events, and event configuration
+
+## Compare event logic with ground truth
+
+Before evaluating predicted states, run the detector on hand-annotated state
+segments. The current annotation file can use event annotations with:
+
+```csv
+event,start_time,confirmed_time,note
+bed_exit,03:00,03:15,"sit up, stand, walk away"
+bed_return,05:00,05:08,"approach bed, sit, lie down"
+```
+
+Then run:
+
+```powershell
+.\.venv\Scripts\python.exe tools\compare_ground_truth_events.py
+```
+
+The tool also accepts a `start,end,state` state-segment CSV. For event
+annotations, it converts each annotated interval into deterministic
+ground-truth state segments and derives only `dist_to_bed` and `present` for
+the logic test; pose features are not involved. It checks for the expected two
+`bed_exit` and two `bed_return` events. If this comparison fails, fix event
+logic before investigating perception.
+If this comparison fails, fix event logic before investigating perception.
