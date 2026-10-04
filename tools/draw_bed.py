@@ -1,4 +1,4 @@
-"""Interactively select and save a mattress or chair polygon."""
+"""Interactively select and save a mattress polygon."""
 
 from __future__ import annotations
 
@@ -27,9 +27,8 @@ def save_polygon(
     config_path: Path,
     config: dict[str, Any],
     points: list[list[int]],
-    zone: str,
 ) -> None:
-    config[f"{zone}_polygon"] = points
+    config["bed_polygon"] = points
     with config_path.open("w", encoding="utf-8") as config_file:
         yaml.safe_dump(config, config_file, sort_keys=False)
 
@@ -62,10 +61,10 @@ def display_scale(frame: Any) -> float:
     )
 
 
-def select_polygon(frame: Any, zone: str) -> list[list[int]]:
+def select_polygon(frame: Any) -> list[list[int]]:
     points: list[list[int]] = []
     scale = display_scale(frame)
-    window_name = zone
+    window_name = "bed"
 
     def on_click(event: int, x: int, y: int, _flags: int, _userdata: Any) -> None:
         if event == cv2.EVENT_LBUTTONDOWN:
@@ -82,7 +81,7 @@ def select_polygon(frame: Any, zone: str) -> list[list[int]]:
     cv2.resizeWindow(window_name, display_width, display_height)
     cv2.setMouseCallback(window_name, on_click)
     print(
-        f"Click the {zone} corners in order. Press 's' to save or 'q' to cancel. "
+        "Click the mattress corners in order. Press 's' to save or 'q' to cancel. "
         f"Display scale: {scale:.3f}"
     )
 
@@ -108,12 +107,6 @@ def select_polygon(frame: Any, zone: str) -> list[list[int]]:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--config", type=Path, default=Path("config.yaml"))
-    parser.add_argument(
-        "--zone",
-        choices=("bed", "chair"),
-        default="bed",
-        help="Zone to select and save",
-    )
     parser.add_argument(
         "--video",
         type=Path,
@@ -159,12 +152,12 @@ def main() -> None:
         )
 
     try:
-        points = select_polygon(frame, args.zone)
+        points = select_polygon(frame)
     finally:
         cv2.destroyAllWindows()
 
-    save_polygon(config_path, config, points, args.zone)
-    overlay_path = args.output_overlay or Path(f"data/{args.zone}_polygon_overlay.png")
+    save_polygon(config_path, config, points)
+    overlay_path = args.output_overlay or Path("data/bed_polygon_overlay.png")
     if not overlay_path.is_absolute():
         overlay_path = config_path.parent / overlay_path
     overlay_path.parent.mkdir(parents=True, exist_ok=True)

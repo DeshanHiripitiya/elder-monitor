@@ -30,16 +30,6 @@ specific timestamp. For example, to use the 12-second frame:
 
 ```powershell
 .\.venv\Scripts\python.exe tools\draw_bed.py `
-  --zone bed `
-  --video data\clip.mp4 `
-  --frame-time 12
-```
-
-The chair selector supports the same timestamp option:
-
-```powershell
-.\.venv\Scripts\python.exe tools\draw_bed.py `
-  --zone chair `
   --video data\clip.mp4 `
   --frame-time 12
 ```
@@ -153,17 +143,3 @@ the overlay marks its source timestamp as `pose sample t=...`.
 
 The rendering stage reuses the saved Parquet outputs and does not rerun pose
 inference. The result is [`data/debug_overlay.mp4`](data/debug_overlay.mp4).
-
-## Select the chair polygon
-
-Use the same first-frame selector for the chair zone:
-
-```powershell
-.\.venv\Scripts\python.exe tools\draw_bed.py `
-  --zone chair `
-  --video data\clip.mp4
-```
-
-Click the corners of the chair seat/area and press `s`. The points are saved
-to `chair_polygon` in [`config.yaml`](config.yaml), with the overlay written
-to [`data/chair_polygon_overlay.png`](data/chair_polygon_overlay.png).

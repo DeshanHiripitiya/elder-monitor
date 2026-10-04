@@ -58,7 +58,6 @@ video: data/clip.mp4
 sample_fps: 5
 pose_model: yolov8m-pose.pt
 bed_polygon: [...]
-chair_polygon: [...]
 thresholds:
   lying_angle_deg: 60
   standing_hip_ratio: 0.55
@@ -97,7 +96,7 @@ t = frame_idx / video_fps
 This is better than incrementing time by an assumed constant because it keeps
 the analysis aligned with the actual video.
 
-### Step 2: Bed and chair polygons
+### Step 2: Bed polygon
 
 Implemented in [`tools/draw_bed.py`](tools/draw_bed.py).
 
@@ -106,7 +105,7 @@ The tool:
 1. Opens a selected video frame.
 2. Displays the frame in a fitted window.
 3. Converts mouse coordinates back to original video coordinates.
-4. Saves the selected polygon to `bed_polygon` or `chair_polygon`.
+4. Saves the selected polygon to `bed_polygon`.
 5. Saves an overlay image for visual verification.
 
 Example commands:
@@ -118,14 +117,11 @@ Example commands:
   --frame-time 12
 
 .\.venv\Scripts\python.exe tools\draw_bed.py `
-  --zone chair `
   --video data\clip.mp4 `
   --frame-time 12
 ```
 
 The polygon should cover the mattress surface, not the complete bed frame.
-The chair polygon is optional but useful for location classification.
-
 ### Step 3: Raw pose extraction
 
 Implemented in [`tools/extract_raw_pose.py`](tools/extract_raw_pose.py).

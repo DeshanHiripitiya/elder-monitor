@@ -2,33 +2,20 @@ video: data/clip.mp4
 sample_fps: 5
 pose_model: yolov8m-pose.pt
 bed_polygon:
-- - 774
-  - 586
-- - 1210
-  - 496
-- - 1905
-  - 738
-- - 1467
+- - 734
+  - 573
+- - 1196
+  - 474
+- - 1918
+  - 740
+- - 1454
   - 1072
-chair_polygon:
-- - 432
-  - 464
-- - 456
-  - 735
-- - 588
-  - 876
-- - 856
-  - 788
-- - 747
-  - 678
-- - 686
-  - 428
 thresholds:
   lying_angle_deg: 60
   standing_hip_ratio: 0.55
   walk_speed: 0.25
   min_kp_conf: 0.3
-  unknown_score: 0.30
+  unknown_score: 0.3
 state_scoring:
   upright_angle_deg: 45
   low_hip_knee_ratio: 0.16
