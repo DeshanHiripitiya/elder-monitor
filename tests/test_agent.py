@@ -211,6 +211,7 @@ def test_production_and_demo_configs_define_all_trigger_and_budget_settings():
         "vlm_model",
         "vlm_timeout_sec",
         "vlm_temperature",
+        "vlm_context_length",
     }
 
     for config_name in ("config.yaml", "config_demo.yaml"):

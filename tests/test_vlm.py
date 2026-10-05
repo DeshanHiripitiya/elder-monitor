@@ -77,6 +77,7 @@ def test_ollama_request_sends_ordered_images_and_zero_temperature():
     request_payload = json.loads(request.data)
     assert request.full_url == "http://localhost:11434/api/chat"
     assert request_payload["options"]["temperature"] == 0
+    assert request_payload["options"]["num_ctx"] == 32768
     assert request_payload["format"] == "json"
     assert request_payload["messages"][0]["images"] == [
         base64.b64encode(b"first").decode(),
@@ -89,6 +90,27 @@ def test_ollama_connection_errors_are_explicitly_unavailable():
     client = OllamaVLMClient(timeout_sec=0.1)
     with patch("src.vlm.urlopen", side_effect=URLError("connection refused")):
         with pytest.raises(VLMUnavailableError, match="request failed"):
+            client.describe([VLMFrame(0, b"image")], "Question")
+
+
+def test_ollama_http_errors_include_response_details():
+    from io import BytesIO
+    from urllib.error import HTTPError
+
+    client = OllamaVLMClient()
+    response = HTTPError(
+        "http://localhost:11434/api/chat",
+        400,
+        "Bad Request",
+        {},
+        BytesIO(b'{"error":"request exceeds context limit"}'),
+    )
+
+    with patch("src.vlm.urlopen", side_effect=response):
+        with pytest.raises(
+            VLMUnavailableError,
+            match="request exceeds context limit",
+        ):
             client.describe([VLMFrame(0, b"image")], "Question")
 
 

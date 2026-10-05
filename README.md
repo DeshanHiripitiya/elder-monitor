@@ -496,6 +496,12 @@ local API errors return a `vlm_unavailable` tool result with the same safe
 unknown fallback. The agent can therefore continue without treating a VLM
 failure as a successful description.
 
+`agent.vlm_context_length` controls Ollama's `num_ctx` request option. It is
+set to 32768 because the eight annotated frames can produce prompts larger
+than Ollama's default 4096-token context. Increase `agent.vlm_timeout_sec`
+when the local model needs more time to load or analyze the images. Both
+settings are configurable; larger contexts may require more system memory.
+
 This project uses local footage only with the local Ollama provider. Install
 Ollama separately, then download the configured vision model locally:
 

@@ -70,9 +70,10 @@ agent:
   vlm_frames: 6
   vlm_provider: ollama
   vlm_base_url: http://localhost:11434
-  vlm_model: qwen2.5vl:7b
-  vlm_timeout_sec: 90
+  vlm_model: qwen3-vl:2b
+  vlm_timeout_sec: 300
   vlm_temperature: 0
+  vlm_context_length: 32768
 smoothing:
   self_probability: 0.98
   unknown_probability: 0.005

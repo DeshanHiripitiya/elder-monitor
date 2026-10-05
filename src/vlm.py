@@ -23,8 +23,9 @@ class OllamaVLMClient:
         self,
         base_url: str = "http://localhost:11434",
         model: str = "qwen2.5vl:7b",
-        timeout_sec: float = 90,
+        timeout_sec: float = 300,
         temperature: float = 0,
+        context_length: int = 32768,
     ) -> None:
         if not base_url.startswith(("http://", "https://")):
             raise ValueError("Ollama base_url must use HTTP or HTTPS")
@@ -32,20 +33,29 @@ class OllamaVLMClient:
             raise ValueError("timeout_sec must be positive")
         if temperature != 0:
             raise ValueError("The constrained VLM client requires temperature=0")
+        if context_length <= 0:
+            raise ValueError("context_length must be positive")
         self.base_url = base_url.rstrip("/")
         self._model = model
         self.timeout_sec = float(timeout_sec)
+        self.context_length = int(context_length)
 
     @property
     def model(self) -> str:
-        return f"ollama:{self.base_url}:{self._model}:temperature=0"
+        return (
+            f"ollama:{self.base_url}:{self._model}:temperature=0:"
+            f"num_ctx={self.context_length}"
+        )
 
     def describe(self, frames: list[VLMFrame], prompt: str) -> str:
         payload = {
             "model": self._model,
             "stream": False,
             "format": "json",
-            "options": {"temperature": 0},
+            "options": {
+                "temperature": 0,
+                "num_ctx": self.context_length,
+            },
             "messages": [
                 {
                     "role": "user",
@@ -67,9 +77,13 @@ class OllamaVLMClient:
             with urlopen(request, timeout=self.timeout_sec) as response:
                 response_data = json.loads(response.read().decode("utf-8"))
         except HTTPError as error:
-            raise VLMUnavailableError(
-                f"Ollama returned HTTP {error.code}"
-            ) from error
+            details = error.read().decode("utf-8", errors="replace").strip()
+            if len(details) > 1000:
+                details = f"{details[:1000]}…"
+            message = f"Ollama returned HTTP {error.code}"
+            if details:
+                message = f"{message}: {details}"
+            raise VLMUnavailableError(message) from error
         except (URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
             raise VLMUnavailableError(
                 f"Ollama request failed: {error}"

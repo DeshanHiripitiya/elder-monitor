@@ -127,6 +127,7 @@ def main() -> None:
             model=str(agent_config["vlm_model"]),
             timeout_sec=float(agent_config["vlm_timeout_sec"]),
             temperature=float(agent_config["vlm_temperature"]),
+            context_length=int(agent_config["vlm_context_length"]),
         )
         print(f"Local VLM: {agent_config['vlm_model']} at {agent_config['vlm_base_url']}")
         print("Frames are sent only to the configured local Ollama endpoint.")
