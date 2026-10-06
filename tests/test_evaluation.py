@@ -1,7 +1,10 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from eval.run_all import (
+    compare_durations,
+    duration_summary,
     evaluate_mode,
     evaluate_event_mode,
     ground_truth_detector_segments,
@@ -10,7 +13,6 @@ from eval.run_all import (
     save_confusion_heatmap,
     to_grid,
 )
-import pandas as pd
 
 
 def test_to_grid_uses_half_open_intervals_and_unknown_for_gaps():
@@ -216,3 +218,57 @@ def test_ground_truth_detector_trace_encodes_non_exit_traps_and_out_of_view():
         and segment["start"] == 30
         for segment in segments
     )
+
+
+def test_duration_summary_fills_gaps_and_checks_total_video_duration():
+    segments = [
+        {"start": 0, "end": 4, "state": "LYING_IN_BED"},
+        {"start": 5, "end": 8, "state": "WALKING"},
+    ]
+    events = [
+        {"type": "bed_exit", "start_time": 4, "confirmed_time": 5},
+        {"type": "bed_return", "start_time": 8, "confirmed_time": 9},
+    ]
+
+    result = duration_summary(
+        segments,
+        duration=10,
+        in_bed_states={"LYING_IN_BED", "SITTING_ON_BED"},
+        events=events,
+    )
+
+    assert result["duration_by_state_sec"]["LYING_IN_BED"] == 4
+    assert result["duration_by_state_sec"]["WALKING"] == 3
+    assert result["duration_by_state_sec"]["UNKNOWN"] == 3
+    assert result["time_in_bed_sec"] == 4
+    assert result["time_out_of_bed_sec"] == 6
+    assert result["exit_count"] == 1
+    assert result["longest_out_of_bed_period_sec"] == 4
+    assert result["duration_sum_check_passed"]
+
+
+def test_duration_comparison_reports_mae_and_total_misattributed_share():
+    gt = duration_summary(
+        [
+            {"start": 0, "end": 5, "state": "LYING_IN_BED"},
+            {"start": 5, "end": 10, "state": "WALKING"},
+        ],
+        duration=10,
+        in_bed_states={"LYING_IN_BED"},
+        events=[],
+    )
+    predicted = duration_summary(
+        [
+            {"start": 0, "end": 4, "state": "LYING_IN_BED"},
+            {"start": 4, "end": 10, "state": "WALKING"},
+        ],
+        duration=10,
+        in_bed_states={"LYING_IN_BED"},
+        events=[],
+    )
+
+    result = compare_durations(gt, predicted)
+
+    assert result["mean_absolute_error_sec"] == pytest.approx(2 / 8)
+    assert result["total_misattributed_time_sec"] == 1
+    assert result["total_misattributed_time_percent_of_video"] == 10

@@ -974,6 +974,413 @@
       }
     }
   },
+  "duration_evaluation": {
+    "states": [
+      "LYING_IN_BED",
+      "SITTING_ON_BED",
+      "STANDING",
+      "WALKING",
+      "SITTING_OUTSIDE_BED",
+      "OUT_OF_BED",
+      "UNKNOWN",
+      "LYING_ON_FLOOR"
+    ],
+    "mean_absolute_error_definition": "Mean of the absolute duration errors across the listed states.",
+    "total_misattributed_time_definition": "Sum of absolute per-state duration errors divided by two, reported as seconds and a share of the video.",
+    "bed_period_definition": "Time in bed is the sum of configured in-bed states; time out of bed is all remaining labeled or UNKNOWN time. Longest out-of-bed period pairs each exit confirmation with the next return confirmation, or video end if there is no return.",
+    "modes": {
+      "raw_argmax": {
+        "states": [
+          {
+            "state": "LYING_IN_BED",
+            "ground_truth_sec": 157.0,
+            "predicted_sec": 136.63333333333333,
+            "absolute_error_sec": 20.366666666666674,
+            "percent_of_ground_truth": 12.972399150743104
+          },
+          {
+            "state": "SITTING_ON_BED",
+            "ground_truth_sec": 82.0,
+            "predicted_sec": 82.60000000000005,
+            "absolute_error_sec": 0.6000000000000512,
+            "percent_of_ground_truth": 0.7317073170732331
+          },
+          {
+            "state": "STANDING",
+            "ground_truth_sec": 46.0,
+            "predicted_sec": 24.60000000000003,
+            "absolute_error_sec": 21.39999999999997,
+            "percent_of_ground_truth": 46.52173913043471
+          },
+          {
+            "state": "WALKING",
+            "ground_truth_sec": 57.0,
+            "predicted_sec": 51.599999999999916,
+            "absolute_error_sec": 5.400000000000084,
+            "percent_of_ground_truth": 9.473684210526464
+          },
+          {
+            "state": "SITTING_OUTSIDE_BED",
+            "ground_truth_sec": 40.0,
+            "predicted_sec": 69.60000000000011,
+            "absolute_error_sec": 29.600000000000108,
+            "percent_of_ground_truth": 74.00000000000027
+          },
+          {
+            "state": "OUT_OF_BED",
+            "ground_truth_sec": 19.0,
+            "predicted_sec": 26.200000000000017,
+            "absolute_error_sec": 7.200000000000017,
+            "percent_of_ground_truth": 37.89473684210535
+          },
+          {
+            "state": "UNKNOWN",
+            "ground_truth_sec": 0.2333333333333485,
+            "predicted_sec": 8.999999999999929,
+            "absolute_error_sec": 8.76666666666658,
+            "percent_of_ground_truth": 3757.1428571425763
+          },
+          {
+            "state": "LYING_ON_FLOOR",
+            "ground_truth_sec": 0.0,
+            "predicted_sec": 0.9999999999999716,
+            "absolute_error_sec": 0.9999999999999716,
+            "percent_of_ground_truth": null
+          }
+        ],
+        "mean_absolute_error_sec": 11.791666666666682,
+        "sum_absolute_error_sec": 94.33333333333346,
+        "total_misattributed_time_sec": 47.16666666666673,
+        "total_misattributed_time_percent_of_video": 11.755420785910125,
+        "predicted_duration_sum_sec": 401.23333333333335,
+        "video_duration_sec": 401.23333333333335,
+        "bed_summary": {
+          "time_in_bed_sec": {
+            "ground_truth": 239.0,
+            "predicted": 219.23333333333338
+          },
+          "time_out_of_bed_sec": {
+            "ground_truth": 162.23333333333335,
+            "predicted": 181.99999999999997
+          },
+          "exit_count": {
+            "ground_truth": 2,
+            "predicted": 1
+          },
+          "return_count": {
+            "ground_truth": 2,
+            "predicted": 1
+          },
+          "longest_out_of_bed_period_sec": {
+            "ground_truth": 113.0,
+            "predicted": 171.2
+          }
+        },
+        "predicted_duration_sum_check_passed": true,
+        "duration_caution": "Duration error can hide state swaps: overcounting one state and undercounting another by the same amount can leave other totals unchanged. Review the confusion matrix alongside this table.",
+        "ground_truth_duration_summary": {
+          "duration_by_state_sec": {
+            "LYING_IN_BED": 157.0,
+            "SITTING_ON_BED": 82.0,
+            "STANDING": 46.0,
+            "WALKING": 57.0,
+            "SITTING_OUTSIDE_BED": 40.0,
+            "OUT_OF_BED": 19.0,
+            "UNKNOWN": 0.2333333333333485,
+            "LYING_ON_FLOOR": 0.0
+          },
+          "duration_sum_sec": 401.23333333333335,
+          "video_duration_sec": 401.23333333333335,
+          "duration_sum_check_passed": true,
+          "time_in_bed_sec": 239.0,
+          "time_out_of_bed_sec": 162.23333333333335,
+          "exit_count": 2,
+          "return_count": 2,
+          "longest_out_of_bed_period_sec": 113.0
+        },
+        "predicted_duration_summary": {
+          "duration_by_state_sec": {
+            "LYING_IN_BED": 136.63333333333333,
+            "SITTING_ON_BED": 82.60000000000005,
+            "STANDING": 24.60000000000003,
+            "WALKING": 51.599999999999916,
+            "SITTING_OUTSIDE_BED": 69.60000000000011,
+            "OUT_OF_BED": 26.200000000000017,
+            "UNKNOWN": 8.999999999999929,
+            "LYING_ON_FLOOR": 0.9999999999999716
+          },
+          "duration_sum_sec": 401.23333333333335,
+          "video_duration_sec": 401.23333333333335,
+          "duration_sum_check_passed": true,
+          "time_in_bed_sec": 219.23333333333338,
+          "time_out_of_bed_sec": 181.99999999999997,
+          "exit_count": 1,
+          "return_count": 1,
+          "longest_out_of_bed_period_sec": 171.2
+        }
+      },
+      "smoothed": {
+        "states": [
+          {
+            "state": "LYING_IN_BED",
+            "ground_truth_sec": 157.0,
+            "predicted_sec": 136.83333333333331,
+            "absolute_error_sec": 20.166666666666686,
+            "percent_of_ground_truth": 12.845010615711265
+          },
+          {
+            "state": "SITTING_ON_BED",
+            "ground_truth_sec": 82.0,
+            "predicted_sec": 85.00000000000003,
+            "absolute_error_sec": 3.0000000000000284,
+            "percent_of_ground_truth": 3.6585365853658884
+          },
+          {
+            "state": "STANDING",
+            "ground_truth_sec": 46.0,
+            "predicted_sec": 16.000000000000014,
+            "absolute_error_sec": 29.999999999999986,
+            "percent_of_ground_truth": 65.2173913043478
+          },
+          {
+            "state": "WALKING",
+            "ground_truth_sec": 57.0,
+            "predicted_sec": 59.39999999999994,
+            "absolute_error_sec": 2.3999999999999417,
+            "percent_of_ground_truth": 4.210526315789371
+          },
+          {
+            "state": "SITTING_OUTSIDE_BED",
+            "ground_truth_sec": 40.0,
+            "predicted_sec": 68.00000000000004,
+            "absolute_error_sec": 28.000000000000043,
+            "percent_of_ground_truth": 70.0000000000001
+          },
+          {
+            "state": "OUT_OF_BED",
+            "ground_truth_sec": 19.0,
+            "predicted_sec": 25.80000000000004,
+            "absolute_error_sec": 6.80000000000004,
+            "percent_of_ground_truth": 35.78947368421073
+          },
+          {
+            "state": "UNKNOWN",
+            "ground_truth_sec": 0.2333333333333485,
+            "predicted_sec": 10.199999999999974,
+            "absolute_error_sec": 9.966666666666626,
+            "percent_of_ground_truth": 4271.428571428277
+          },
+          {
+            "state": "LYING_ON_FLOOR",
+            "ground_truth_sec": 0.0,
+            "predicted_sec": 0.0,
+            "absolute_error_sec": 0.0,
+            "percent_of_ground_truth": null
+          }
+        ],
+        "mean_absolute_error_sec": 12.541666666666668,
+        "sum_absolute_error_sec": 100.33333333333334,
+        "total_misattributed_time_sec": 50.16666666666667,
+        "total_misattributed_time_percent_of_video": 12.503115394201213,
+        "predicted_duration_sum_sec": 401.23333333333335,
+        "video_duration_sec": 401.23333333333335,
+        "bed_summary": {
+          "time_in_bed_sec": {
+            "ground_truth": 239.0,
+            "predicted": 221.83333333333334
+          },
+          "time_out_of_bed_sec": {
+            "ground_truth": 162.23333333333335,
+            "predicted": 179.4
+          },
+          "exit_count": {
+            "ground_truth": 2,
+            "predicted": 3
+          },
+          "return_count": {
+            "ground_truth": 2,
+            "predicted": 3
+          },
+          "longest_out_of_bed_period_sec": {
+            "ground_truth": 113.0,
+            "predicted": 113.39999999999998
+          }
+        },
+        "predicted_duration_sum_check_passed": true,
+        "duration_caution": "Duration error can hide state swaps: overcounting one state and undercounting another by the same amount can leave other totals unchanged. Review the confusion matrix alongside this table.",
+        "ground_truth_duration_summary": {
+          "duration_by_state_sec": {
+            "LYING_IN_BED": 157.0,
+            "SITTING_ON_BED": 82.0,
+            "STANDING": 46.0,
+            "WALKING": 57.0,
+            "SITTING_OUTSIDE_BED": 40.0,
+            "OUT_OF_BED": 19.0,
+            "UNKNOWN": 0.2333333333333485,
+            "LYING_ON_FLOOR": 0.0
+          },
+          "duration_sum_sec": 401.23333333333335,
+          "video_duration_sec": 401.23333333333335,
+          "duration_sum_check_passed": true,
+          "time_in_bed_sec": 239.0,
+          "time_out_of_bed_sec": 162.23333333333335,
+          "exit_count": 2,
+          "return_count": 2,
+          "longest_out_of_bed_period_sec": 113.0
+        },
+        "predicted_duration_summary": {
+          "duration_by_state_sec": {
+            "LYING_IN_BED": 136.83333333333331,
+            "SITTING_ON_BED": 85.00000000000003,
+            "STANDING": 16.000000000000014,
+            "WALKING": 59.39999999999994,
+            "SITTING_OUTSIDE_BED": 68.00000000000004,
+            "OUT_OF_BED": 25.80000000000004,
+            "UNKNOWN": 10.199999999999974,
+            "LYING_ON_FLOOR": 0.0
+          },
+          "duration_sum_sec": 401.23333333333335,
+          "video_duration_sec": 401.23333333333335,
+          "duration_sum_check_passed": true,
+          "time_in_bed_sec": 221.83333333333334,
+          "time_out_of_bed_sec": 179.4,
+          "exit_count": 3,
+          "return_count": 3,
+          "longest_out_of_bed_period_sec": 113.39999999999998
+        }
+      },
+      "timeline": {
+        "states": [
+          {
+            "state": "LYING_IN_BED",
+            "ground_truth_sec": 157.0,
+            "predicted_sec": 153.4333333333334,
+            "absolute_error_sec": 3.566666666666606,
+            "percent_of_ground_truth": 2.271762208067902
+          },
+          {
+            "state": "SITTING_ON_BED",
+            "ground_truth_sec": 82.0,
+            "predicted_sec": 84.80000000000001,
+            "absolute_error_sec": 2.8000000000000114,
+            "percent_of_ground_truth": 3.414634146341477
+          },
+          {
+            "state": "STANDING",
+            "ground_truth_sec": 46.0,
+            "predicted_sec": 17.200000000000017,
+            "absolute_error_sec": 28.799999999999983,
+            "percent_of_ground_truth": 62.60869565217387
+          },
+          {
+            "state": "WALKING",
+            "ground_truth_sec": 57.0,
+            "predicted_sec": 60.99999999999995,
+            "absolute_error_sec": 3.9999999999999503,
+            "percent_of_ground_truth": 7.017543859649035
+          },
+          {
+            "state": "SITTING_OUTSIDE_BED",
+            "ground_truth_sec": 40.0,
+            "predicted_sec": 67.99999999999999,
+            "absolute_error_sec": 27.999999999999986,
+            "percent_of_ground_truth": 69.99999999999997
+          },
+          {
+            "state": "OUT_OF_BED",
+            "ground_truth_sec": 19.0,
+            "predicted_sec": 16.80000000000001,
+            "absolute_error_sec": 2.1999999999999886,
+            "percent_of_ground_truth": 11.578947368420993
+          },
+          {
+            "state": "UNKNOWN",
+            "ground_truth_sec": 0.2333333333333485,
+            "predicted_sec": 0.0,
+            "absolute_error_sec": 0.2333333333333485,
+            "percent_of_ground_truth": 100.0
+          },
+          {
+            "state": "LYING_ON_FLOOR",
+            "ground_truth_sec": 0.0,
+            "predicted_sec": 0.0,
+            "absolute_error_sec": 0.0,
+            "percent_of_ground_truth": null
+          }
+        ],
+        "mean_absolute_error_sec": 8.699999999999985,
+        "sum_absolute_error_sec": 69.59999999999988,
+        "total_misattributed_time_sec": 34.79999999999994,
+        "total_misattributed_time_percent_of_video": 8.673257456176774,
+        "predicted_duration_sum_sec": 401.23333333333335,
+        "video_duration_sec": 401.23333333333335,
+        "bed_summary": {
+          "time_in_bed_sec": {
+            "ground_truth": 239.0,
+            "predicted": 238.2333333333334
+          },
+          "time_out_of_bed_sec": {
+            "ground_truth": 162.23333333333335,
+            "predicted": 162.99999999999994
+          },
+          "exit_count": {
+            "ground_truth": 2,
+            "predicted": 1
+          },
+          "return_count": {
+            "ground_truth": 2,
+            "predicted": 1
+          },
+          "longest_out_of_bed_period_sec": {
+            "ground_truth": 113.0,
+            "predicted": 113.39999999999998
+          }
+        },
+        "predicted_duration_sum_check_passed": true,
+        "duration_caution": "Duration error can hide state swaps: overcounting one state and undercounting another by the same amount can leave other totals unchanged. Review the confusion matrix alongside this table.",
+        "ground_truth_duration_summary": {
+          "duration_by_state_sec": {
+            "LYING_IN_BED": 157.0,
+            "SITTING_ON_BED": 82.0,
+            "STANDING": 46.0,
+            "WALKING": 57.0,
+            "SITTING_OUTSIDE_BED": 40.0,
+            "OUT_OF_BED": 19.0,
+            "UNKNOWN": 0.2333333333333485,
+            "LYING_ON_FLOOR": 0.0
+          },
+          "duration_sum_sec": 401.23333333333335,
+          "video_duration_sec": 401.23333333333335,
+          "duration_sum_check_passed": true,
+          "time_in_bed_sec": 239.0,
+          "time_out_of_bed_sec": 162.23333333333335,
+          "exit_count": 2,
+          "return_count": 2,
+          "longest_out_of_bed_period_sec": 113.0
+        },
+        "predicted_duration_summary": {
+          "duration_by_state_sec": {
+            "LYING_IN_BED": 153.4333333333334,
+            "SITTING_ON_BED": 84.80000000000001,
+            "STANDING": 17.200000000000017,
+            "WALKING": 60.99999999999995,
+            "SITTING_OUTSIDE_BED": 67.99999999999999,
+            "OUT_OF_BED": 16.80000000000001,
+            "UNKNOWN": 0.0,
+            "LYING_ON_FLOOR": 0.0
+          },
+          "duration_sum_sec": 401.23333333333335,
+          "video_duration_sec": 401.23333333333335,
+          "duration_sum_check_passed": true,
+          "time_in_bed_sec": 238.2333333333334,
+          "time_out_of_bed_sec": 162.99999999999994,
+          "exit_count": 1,
+          "return_count": 1,
+          "longest_out_of_bed_period_sec": 113.39999999999998
+        }
+      }
+    }
+  },
   "bed_event_evaluation": {
     "sample_size_note": "There are only 2 annotated bed exits and 2 annotated bed returns (4 positive events); one miss changes per-kind recall by 50 percentage points. These counts cannot support strong claims.",
     "matching_rule": "One-to-one nearest same-kind event matching using confirmed_time.",

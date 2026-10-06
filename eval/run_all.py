@@ -31,6 +31,16 @@ from tools.score_states import parse_timestamp
 SHIFT_SECONDS = tuple(range(-5, 6))
 BOUNDARY_TOLERANCES = (1.0, 2.0)
 UNKNOWN = "UNKNOWN"
+REPORT_STATES = (
+    "LYING_IN_BED",
+    "SITTING_ON_BED",
+    "STANDING",
+    "WALKING",
+    "SITTING_OUTSIDE_BED",
+    "OUT_OF_BED",
+    "UNKNOWN",
+    "LYING_ON_FLOOR",
+)
 
 
 def to_grid(
@@ -95,7 +105,10 @@ def _samples_to_segments(
     label_column: str,
     duration: float,
 ) -> list[dict[str, Any]]:
-    ordered = samples[["t", label_column]].sort_values("t").reset_index(drop=True)
+    required = ["t", label_column]
+    if "_prediction_confidence" in samples.columns:
+        required.append("_prediction_confidence")
+    ordered = samples[required].sort_values("t").reset_index(drop=True)
     if ordered.empty:
         raise ValueError(f"{label_column} contains no prediction samples")
     times = ordered["t"].to_numpy(dtype=float)
@@ -110,9 +123,44 @@ def _samples_to_segments(
             start = float(times[start_index])
             end = float(times[index]) if index < len(times) else duration
             if end > start:
-                segments.append({"start": start, "end": end, "state": labels[start_index]})
+                segment = {
+                    "start": start,
+                    "end": end,
+                    "state": labels[start_index],
+                }
+                if "_prediction_confidence" in ordered.columns:
+                    confidence = ordered["_prediction_confidence"].iloc[
+                        start_index:index
+                    ]
+                    segment["mean_confidence"] = float(confidence.mean())
+                else:
+                    segment["mean_confidence"] = 1.0
+                segments.append(segment)
             start_index = index
     return segments
+
+
+def _add_prediction_confidence(
+    samples: pd.DataFrame,
+    label_column: str,
+    score_frame: pd.DataFrame,
+) -> pd.DataFrame:
+    """Attach the probability of each selected state to its sampled row."""
+    if "frame_idx" not in samples or "frame_idx" not in score_frame:
+        raise ValueError("Frame-level confidence alignment requires frame_idx")
+    score_lookup = score_frame.set_index("frame_idx")
+    missing = set(samples["frame_idx"]) - set(score_lookup.index)
+    if missing:
+        raise ValueError(
+            f"State scores are missing {len(missing)} prediction frame indices"
+        )
+    result = samples.copy()
+    confidences = []
+    for row in result[["frame_idx", label_column]].itertuples(index=False):
+        state_score = score_lookup.loc[row.frame_idx, row[1]]
+        confidences.append(float(state_score))
+    result["_prediction_confidence"] = confidences
+    return result
 
 
 def _score_shift(
@@ -303,6 +351,227 @@ def evaluate_mode(
         "best_shift": best,
         "shifts": shifts,
     }
+
+
+def duration_summary(
+    segments: list[dict[str, Any]],
+    duration: float,
+    in_bed_states: set[str],
+    events: list[dict[str, Any]],
+) -> dict[str, Any]:
+    """Sum state and bed periods from segment boundaries over the video span."""
+    if not np.isfinite(duration) or duration <= 0:
+        raise ValueError("duration must be a finite positive number")
+    ordered = sorted(segments, key=lambda segment: float(segment["start"]))
+    totals = {state: 0.0 for state in REPORT_STATES}
+    cursor = 0.0
+    for segment in ordered:
+        start = float(segment["start"])
+        end = float(segment["end"])
+        if end <= 0 or start >= duration:
+            continue
+        start = max(0.0, start)
+        end = min(duration, end)
+        if start < cursor - 1e-6:
+            raise ValueError("Duration segments overlap")
+        if start > cursor:
+            totals[UNKNOWN] += start - cursor
+        if end > start:
+            state = str(segment["state"])
+            if state not in totals:
+                totals[state] = 0.0
+            totals[state] += end - start
+            cursor = end
+    if cursor < duration:
+        totals[UNKNOWN] += duration - cursor
+
+    total_duration = sum(totals.values())
+    if abs(total_duration - duration) >= 1.0:
+        raise ValueError(
+            f"Predicted durations sum to {total_duration:.3f}s, "
+            f"not video duration {duration:.3f}s"
+        )
+
+    ordered_events = sorted(
+        (
+            event
+            for event in events
+            if event.get("type") in {"bed_exit", "bed_return"}
+        ),
+        key=lambda event: float(event["confirmed_time"]),
+    )
+    exits = [
+        float(event["confirmed_time"])
+        for event in ordered_events
+        if event["type"] == "bed_exit"
+    ]
+    returns = [
+        float(event["confirmed_time"])
+        for event in ordered_events
+        if event["type"] == "bed_return"
+    ]
+    out_periods = []
+    for index, exit_time in enumerate(exits):
+        next_return = next(
+            (return_time for return_time in returns if return_time >= exit_time),
+            duration,
+        )
+        out_periods.append(max(0.0, next_return - exit_time))
+
+    in_bed_time = sum(
+        time for state, time in totals.items() if state in in_bed_states
+    )
+    out_of_bed_time = sum(totals.values()) - in_bed_time
+    return {
+        "duration_by_state_sec": totals,
+        "duration_sum_sec": total_duration,
+        "video_duration_sec": duration,
+        "duration_sum_check_passed": abs(total_duration - duration) < 1.0,
+        "time_in_bed_sec": in_bed_time,
+        "time_out_of_bed_sec": out_of_bed_time,
+        "exit_count": len(exits),
+        "return_count": len(returns),
+        "longest_out_of_bed_period_sec": max(out_periods, default=0.0),
+    }
+
+
+def compare_durations(
+    ground_truth: dict[str, Any],
+    predicted: dict[str, Any],
+) -> dict[str, Any]:
+    """Compare each state duration and summarize total misattributed time."""
+    rows = []
+    absolute_errors = []
+    for state in REPORT_STATES:
+        gt_duration = float(ground_truth["duration_by_state_sec"].get(state, 0.0))
+        predicted_duration = float(
+            predicted["duration_by_state_sec"].get(state, 0.0)
+        )
+        absolute_error = abs(predicted_duration - gt_duration)
+        percent_of_gt = (
+            100.0 * absolute_error / gt_duration if gt_duration else None
+        )
+        rows.append(
+            {
+                "state": state,
+                "ground_truth_sec": gt_duration,
+                "predicted_sec": predicted_duration,
+                "absolute_error_sec": absolute_error,
+                "percent_of_ground_truth": percent_of_gt,
+            }
+        )
+        absolute_errors.append(absolute_error)
+    sum_absolute_error = sum(absolute_errors)
+    video_duration = float(ground_truth["video_duration_sec"])
+    return {
+        "states": rows,
+        "mean_absolute_error_sec": float(np.mean(absolute_errors)),
+        "sum_absolute_error_sec": sum_absolute_error,
+        "total_misattributed_time_sec": sum_absolute_error / 2.0,
+        "total_misattributed_time_percent_of_video": (
+            (sum_absolute_error / 2.0) / video_duration * 100.0
+            if video_duration
+            else None
+        ),
+        "predicted_duration_sum_sec": float(predicted["duration_sum_sec"]),
+        "video_duration_sec": video_duration,
+        "bed_summary": {
+            "time_in_bed_sec": {
+                "ground_truth": ground_truth["time_in_bed_sec"],
+                "predicted": predicted["time_in_bed_sec"],
+            },
+            "time_out_of_bed_sec": {
+                "ground_truth": ground_truth["time_out_of_bed_sec"],
+                "predicted": predicted["time_out_of_bed_sec"],
+            },
+            "exit_count": {
+                "ground_truth": ground_truth["exit_count"],
+                "predicted": predicted["exit_count"],
+            },
+            "return_count": {
+                "ground_truth": ground_truth["return_count"],
+                "predicted": predicted["return_count"],
+            },
+            "longest_out_of_bed_period_sec": {
+                "ground_truth": ground_truth[
+                    "longest_out_of_bed_period_sec"
+                ],
+                "predicted": predicted[
+                    "longest_out_of_bed_period_sec"
+                ],
+            },
+        },
+        "predicted_duration_sum_check_passed": predicted[
+            "duration_sum_check_passed"
+        ],
+        "duration_caution": (
+            "Duration error can hide state swaps: overcounting one state and "
+            "undercounting another by the same amount can leave other totals "
+            "unchanged. Review the confusion matrix alongside this table."
+        ),
+    }
+
+
+def write_duration_summary(
+    metrics: dict[str, Any],
+    output_path: Path,
+) -> None:
+    """Write the requested concise duration and bed summary table."""
+    lines = [
+        "# State duration evaluation",
+        "",
+        "| State | Ground truth | Predicted | Absolute error | % of GT |",
+        "|---|---:|---:|---:|---:|",
+    ]
+    for row in metrics["states"]:
+        percent = (
+            "n/a"
+            if row["percent_of_ground_truth"] is None
+            else f"{row['percent_of_ground_truth']:.1f}%"
+        )
+        lines.append(
+            f"| {row['state'].replace('_', ' ').title()} | "
+            f"{row['ground_truth_sec']:.1f}s | {row['predicted_sec']:.1f}s | "
+            f"{row['absolute_error_sec']:.1f}s | {percent} |"
+        )
+    lines.extend(
+        [
+            "",
+            f"- Mean absolute error across {len(metrics['states'])} states: "
+            f"{metrics['mean_absolute_error_sec']:.1f}s.",
+            f"- Total misattributed time: "
+            f"{metrics['total_misattributed_time_sec']:.1f}s "
+            f"({metrics['total_misattributed_time_percent_of_video']:.1f}% "
+            "of video; sum of absolute state errors / 2).",
+            "",
+            "| Bed summary | Ground truth | Predicted |",
+            "|---|---:|---:|",
+        ]
+    )
+    for key, values in metrics["bed_summary"].items():
+        label = key.replace("_", " ").title()
+        if key.endswith("_sec"):
+            gt = f"{values['ground_truth']:.1f}s"
+            prediction = f"{values['predicted']:.1f}s"
+        else:
+            gt = str(values["ground_truth"])
+            prediction = str(values["predicted"])
+        lines.append(f"| {label} | {gt} | {prediction} |")
+    lines.extend(
+        [
+            "",
+            "**Duration sums:** predicted "
+            f"{metrics['predicted_duration_sum_sec']:.1f}s; "
+            f"video {metrics['video_duration_sec']:.1f}s; "
+            f"within 1s: {metrics['predicted_duration_sum_check_passed']}.",
+            "",
+            "**Caution:** Duration error can hide mistakes. A 5s overcount of "
+            "walking and a 5s undercount of standing can leave other duration "
+            "totals unchanged. Read the confusion matrix next to this table.",
+        ]
+    )
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    output_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
 
 
 def save_confusion_heatmap(
@@ -1014,6 +1283,16 @@ def main() -> None:
     smoothed = pd.read_parquet(smoothed_path)
     if not {"t", "smoothed_state"}.issubset(smoothed.columns):
         raise ValueError(f"{smoothed_path} must contain t and smoothed_state columns")
+    raw_samples = _add_prediction_confidence(
+        scores,
+        "argmax_state",
+        scores,
+    )
+    smoothed_samples = _add_prediction_confidence(
+        smoothed,
+        "smoothed_state",
+        scores,
+    )
 
     _, truth = to_grid(truth_segments, duration, args.step)
     transitions = [
@@ -1022,8 +1301,16 @@ def main() -> None:
         if segment["state"] != truth_segments[index - 1]["state"]
     ]
     modes = {
-        "raw_argmax": _samples_to_segments(scores, "argmax_state", duration),
-        "smoothed": _samples_to_segments(smoothed, "smoothed_state", duration),
+        "raw_argmax": _samples_to_segments(
+            raw_samples,
+            "argmax_state",
+            duration,
+        ),
+        "smoothed": _samples_to_segments(
+            smoothed_samples,
+            "smoothed_state",
+            duration,
+        ),
         "timeline": timeline_segments,
     }
     evaluations: dict[str, Any] = {}
@@ -1040,6 +1327,39 @@ def main() -> None:
             args.step,
             boundary_times=transitions,
         )
+
+    gt_summary_events = [
+        {
+            "type": event["type"],
+            "start_time": event["start_time"],
+            "confirmed_time": event["confirmed_time"],
+        }
+        for event in truth_event_list
+    ]
+    ground_truth_durations = duration_summary(
+        truth_segments,
+        duration,
+        set(config["in_bed_states"]),
+        gt_summary_events,
+    )
+    duration_evaluations = {}
+    for mode, segments in modes.items():
+        detected_mode_events = detect_exits(
+            segments,
+            predicted_features,
+            config,
+        )
+        mode_duration = duration_summary(
+            segments,
+            duration,
+            set(config["in_bed_states"]),
+            detected_mode_events,
+        )
+        duration_evaluations[mode] = {
+            **compare_durations(ground_truth_durations, mode_duration),
+            "ground_truth_duration_summary": ground_truth_durations,
+            "predicted_duration_summary": mode_duration,
+        }
 
     event_modes = {
         "ground_truth_segments": ground_truth_detector_events,
@@ -1101,6 +1421,23 @@ def main() -> None:
             "negative_trap_count": len(traps),
         },
         "modes": evaluations,
+        "duration_evaluation": {
+            "states": list(REPORT_STATES),
+            "mean_absolute_error_definition": (
+                "Mean of the absolute duration errors across the listed states."
+            ),
+            "total_misattributed_time_definition": (
+                "Sum of absolute per-state duration errors divided by two, "
+                "reported as seconds and a share of the video."
+            ),
+            "bed_period_definition": (
+                "Time in bed is the sum of configured in-bed states; time out "
+                "of bed is all remaining labeled or UNKNOWN time. Longest "
+                "out-of-bed period pairs each exit confirmation with the next "
+                "return confirmation, or video end if there is no return."
+            ),
+            "modes": duration_evaluations,
+        },
         "bed_event_evaluation": {
             "sample_size_note": (
                 "There are only 2 annotated bed exits and 2 annotated bed returns "
@@ -1151,6 +1488,11 @@ def main() -> None:
     )
     event_report_path = results_path / "bed_event_metrics.md"
     write_event_summary(report["bed_event_evaluation"], event_report_path)
+    duration_report_path = results_path / "duration_metrics.md"
+    write_duration_summary(
+        duration_evaluations["timeline"],
+        duration_report_path,
+    )
     for mode, evaluation in evaluations.items():
         save_confusion_heatmap(
             evaluation,
@@ -1240,9 +1582,20 @@ def main() -> None:
         f"Ground-truth events: {len(gt_events)}; "
         f"stored predicted events: {len(stored_predicted_events)}"
     )
+    print(
+        "Timeline duration metrics: "
+        f"MAE={duration_evaluations['timeline']['mean_absolute_error_sec']:.1f}s; "
+        f"misattributed="
+        f"{duration_evaluations['timeline']['total_misattributed_time_sec']:.1f}s "
+        f"({duration_evaluations['timeline']['total_misattributed_time_percent_of_video']:.1f}% "
+        "of video)"
+    )
+    if not duration_evaluations["timeline"]["predicted_duration_sum_check_passed"]:
+        raise ValueError("Predicted timeline durations failed the <1s sum assertion")
     print(f"Saved confusion heatmaps under: {results_path}")
     print(f"Saved alignment report: {report_path}")
     print(f"Saved bed-event scorecard: {event_report_path}")
+    print(f"Saved duration scorecard: {duration_report_path}")
 
 
 if __name__ == "__main__":
