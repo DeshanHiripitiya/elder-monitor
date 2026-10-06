@@ -207,11 +207,10 @@ def test_production_and_demo_configs_define_all_trigger_and_budget_settings():
         "max_vlm_calls_total",
         "vlm_frames",
         "vlm_provider",
-        "vlm_base_url",
         "vlm_model",
+        "vlm_api_key_env",
         "vlm_timeout_sec",
         "vlm_temperature",
-        "vlm_context_length",
     }
 
     for config_name in ("config.yaml", "config_demo.yaml"):

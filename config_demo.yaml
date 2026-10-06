@@ -58,12 +58,11 @@ agent:
   max_vlm_calls_per_case: 2
   max_vlm_calls_total: 40
   vlm_frames: 6
-  vlm_provider: ollama
-  vlm_base_url: http://localhost:11434
-  vlm_model: qwen2.5vl:7b
-  vlm_timeout_sec: 300
+  vlm_provider: gemini
+  vlm_model: gemini-2.5-flash
+  vlm_api_key_env: GEMINI_API_KEY
+  vlm_timeout_sec: 120
   vlm_temperature: 0
-  vlm_context_length: 32768
 smoothing:
   self_probability: 0.98
   unknown_probability: 0.005

@@ -1,0 +1,1743 @@
+{
+  "grid": {
+    "step_sec": 1.0,
+    "duration_sec": 401.23333333333335,
+    "samples": 402,
+    "ground_truth_labeled_samples": 401,
+    "shift_range_sec": [
+      -5,
+      5
+    ],
+    "positive_shift_means": "predictions are shifted later relative to GT"
+  },
+  "inputs": {
+    "ground_truth_segments": "data\\raw\\gt.csv",
+    "ground_truth_events": "data\\raw\\gt_events.csv",
+    "predicted_events": "data\\processed\\events.json",
+    "ground_truth_event_count": 7,
+    "positive_ground_truth_event_count": 4,
+    "negative_trap_count": 3
+  },
+  "modes": {
+    "raw_argmax": {
+      "overall_accuracy": 0.7256857855361596,
+      "strict_accuracy": {
+        "correct": 291,
+        "total": 401,
+        "accuracy": 0.7256857855361596
+      },
+      "coverage": {
+        "committed_samples": 393,
+        "total_labeled_samples": 401,
+        "coverage": 0.9800498753117207,
+        "selective_correct": 291,
+        "selective_accuracy": 0.7404580152671756,
+        "abstained_samples": 8,
+        "abstained_fraction": 0.0199501246882793
+      },
+      "macro_f1": 0.6715775072226714,
+      "per_class": {
+        "LYING_IN_BED": {
+          "support": 157,
+          "precision": 0.927007299270073,
+          "recall": 0.8089171974522293,
+          "f1": 0.8639455782312926
+        },
+        "OUT_OF_BED": {
+          "support": 19,
+          "precision": 0.56,
+          "recall": 0.7368421052631579,
+          "f1": 0.6363636363636364
+        },
+        "SITTING_ON_BED": {
+          "support": 82,
+          "precision": 0.8072289156626506,
+          "recall": 0.8170731707317073,
+          "f1": 0.812121212121212
+        },
+        "SITTING_OUTSIDE_BED": {
+          "support": 40,
+          "precision": 0.5507246376811594,
+          "recall": 0.95,
+          "f1": 0.6972477064220184
+        },
+        "STANDING": {
+          "support": 46,
+          "precision": 0.7777777777777778,
+          "recall": 0.45652173913043476,
+          "f1": 0.5753424657534246
+        },
+        "WALKING": {
+          "support": 57,
+          "precision": 0.47058823529411764,
+          "recall": 0.42105263157894735,
+          "f1": 0.4444444444444444
+        }
+      },
+      "confusion_matrix": {
+        "ground_truth_labels": [
+          "LYING_IN_BED",
+          "OUT_OF_BED",
+          "SITTING_ON_BED",
+          "SITTING_OUTSIDE_BED",
+          "STANDING",
+          "WALKING"
+        ],
+        "predicted_labels": [
+          "LYING_IN_BED",
+          "LYING_ON_FLOOR",
+          "OUT_OF_BED",
+          "SITTING_ON_BED",
+          "SITTING_OUTSIDE_BED",
+          "STANDING",
+          "UNKNOWN",
+          "WALKING"
+        ],
+        "counts": {
+          "LYING_IN_BED": {
+            "LYING_IN_BED": 127,
+            "LYING_ON_FLOOR": 1,
+            "OUT_OF_BED": 10,
+            "SITTING_ON_BED": 12,
+            "SITTING_OUTSIDE_BED": 1,
+            "STANDING": 1,
+            "UNKNOWN": 3,
+            "WALKING": 2
+          },
+          "OUT_OF_BED": {
+            "LYING_IN_BED": 2,
+            "LYING_ON_FLOOR": 0,
+            "OUT_OF_BED": 14,
+            "SITTING_ON_BED": 0,
+            "SITTING_OUTSIDE_BED": 1,
+            "STANDING": 0,
+            "UNKNOWN": 2,
+            "WALKING": 0
+          },
+          "SITTING_ON_BED": {
+            "LYING_IN_BED": 7,
+            "LYING_ON_FLOOR": 0,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 67,
+            "SITTING_OUTSIDE_BED": 0,
+            "STANDING": 0,
+            "UNKNOWN": 0,
+            "WALKING": 8
+          },
+          "SITTING_OUTSIDE_BED": {
+            "LYING_IN_BED": 0,
+            "LYING_ON_FLOOR": 0,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 0,
+            "SITTING_OUTSIDE_BED": 38,
+            "STANDING": 0,
+            "UNKNOWN": 0,
+            "WALKING": 2
+          },
+          "STANDING": {
+            "LYING_IN_BED": 1,
+            "LYING_ON_FLOOR": 0,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 3,
+            "SITTING_OUTSIDE_BED": 5,
+            "STANDING": 21,
+            "UNKNOWN": 1,
+            "WALKING": 15
+          },
+          "WALKING": {
+            "LYING_IN_BED": 0,
+            "LYING_ON_FLOOR": 0,
+            "OUT_OF_BED": 1,
+            "SITTING_ON_BED": 1,
+            "SITTING_OUTSIDE_BED": 24,
+            "STANDING": 5,
+            "UNKNOWN": 2,
+            "WALKING": 24
+          }
+        },
+        "row_normalized": {
+          "LYING_IN_BED": {
+            "LYING_IN_BED": 0.8089171974522293,
+            "LYING_ON_FLOOR": 0.006369426751592357,
+            "OUT_OF_BED": 0.06369426751592357,
+            "SITTING_ON_BED": 0.07643312101910828,
+            "SITTING_OUTSIDE_BED": 0.006369426751592357,
+            "STANDING": 0.006369426751592357,
+            "UNKNOWN": 0.01910828025477707,
+            "WALKING": 0.012738853503184714
+          },
+          "OUT_OF_BED": {
+            "LYING_IN_BED": 0.10526315789473684,
+            "LYING_ON_FLOOR": 0.0,
+            "OUT_OF_BED": 0.7368421052631579,
+            "SITTING_ON_BED": 0.0,
+            "SITTING_OUTSIDE_BED": 0.05263157894736842,
+            "STANDING": 0.0,
+            "UNKNOWN": 0.10526315789473684,
+            "WALKING": 0.0
+          },
+          "SITTING_ON_BED": {
+            "LYING_IN_BED": 0.08536585365853659,
+            "LYING_ON_FLOOR": 0.0,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.8170731707317073,
+            "SITTING_OUTSIDE_BED": 0.0,
+            "STANDING": 0.0,
+            "UNKNOWN": 0.0,
+            "WALKING": 0.0975609756097561
+          },
+          "SITTING_OUTSIDE_BED": {
+            "LYING_IN_BED": 0.0,
+            "LYING_ON_FLOOR": 0.0,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.0,
+            "SITTING_OUTSIDE_BED": 0.95,
+            "STANDING": 0.0,
+            "UNKNOWN": 0.0,
+            "WALKING": 0.05
+          },
+          "STANDING": {
+            "LYING_IN_BED": 0.021739130434782608,
+            "LYING_ON_FLOOR": 0.0,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.06521739130434782,
+            "SITTING_OUTSIDE_BED": 0.10869565217391304,
+            "STANDING": 0.45652173913043476,
+            "UNKNOWN": 0.021739130434782608,
+            "WALKING": 0.32608695652173914
+          },
+          "WALKING": {
+            "LYING_IN_BED": 0.0,
+            "LYING_ON_FLOOR": 0.0,
+            "OUT_OF_BED": 0.017543859649122806,
+            "SITTING_ON_BED": 0.017543859649122806,
+            "SITTING_OUTSIDE_BED": 0.42105263157894735,
+            "STANDING": 0.08771929824561403,
+            "UNKNOWN": 0.03508771929824561,
+            "WALKING": 0.42105263157894735
+          }
+        }
+      },
+      "boundary_tolerant_accuracy": {
+        "1_sec": {
+          "correct": 265,
+          "total": 331,
+          "ignored_samples": 70,
+          "accuracy": 0.8006042296072508
+        },
+        "2_sec": {
+          "correct": 240,
+          "total": 295,
+          "ignored_samples": 106,
+          "accuracy": 0.8135593220338984
+        }
+      },
+      "top_off_diagonal_confusions": [
+        {
+          "ground_truth": "WALKING",
+          "predicted": "SITTING_OUTSIDE_BED",
+          "count": 24,
+          "sentence": "WALKING was predicted as SITTING_OUTSIDE_BED for 24 labeled samples (24 seconds)."
+        },
+        {
+          "ground_truth": "STANDING",
+          "predicted": "WALKING",
+          "count": 15,
+          "sentence": "STANDING was predicted as WALKING for 15 labeled samples (15 seconds)."
+        },
+        {
+          "ground_truth": "LYING_IN_BED",
+          "predicted": "SITTING_ON_BED",
+          "count": 12,
+          "sentence": "LYING_IN_BED was predicted as SITTING_ON_BED for 12 labeled samples (12 seconds)."
+        }
+      ],
+      "zero_shift": {
+        "shift_sec": 0,
+        "correct": 291,
+        "total": 401,
+        "accuracy": 0.7256857855361596,
+        "unknown_predictions": 8
+      },
+      "best_shift": {
+        "shift_sec": -1,
+        "correct": 311,
+        "total": 401,
+        "accuracy": 0.7755610972568578,
+        "unknown_predictions": 8
+      },
+      "shifts": [
+        {
+          "shift_sec": -5,
+          "correct": 260,
+          "total": 401,
+          "accuracy": 0.6483790523690773,
+          "unknown_predictions": 12
+        },
+        {
+          "shift_sec": -4,
+          "correct": 279,
+          "total": 401,
+          "accuracy": 0.6957605985037406,
+          "unknown_predictions": 11
+        },
+        {
+          "shift_sec": -3,
+          "correct": 295,
+          "total": 401,
+          "accuracy": 0.7356608478802993,
+          "unknown_predictions": 10
+        },
+        {
+          "shift_sec": -2,
+          "correct": 308,
+          "total": 401,
+          "accuracy": 0.7680798004987531,
+          "unknown_predictions": 9
+        },
+        {
+          "shift_sec": -1,
+          "correct": 311,
+          "total": 401,
+          "accuracy": 0.7755610972568578,
+          "unknown_predictions": 8
+        },
+        {
+          "shift_sec": 0,
+          "correct": 291,
+          "total": 401,
+          "accuracy": 0.7256857855361596,
+          "unknown_predictions": 8
+        },
+        {
+          "shift_sec": 1,
+          "correct": 277,
+          "total": 401,
+          "accuracy": 0.6907730673316709,
+          "unknown_predictions": 9
+        },
+        {
+          "shift_sec": 2,
+          "correct": 262,
+          "total": 401,
+          "accuracy": 0.6533665835411472,
+          "unknown_predictions": 10
+        },
+        {
+          "shift_sec": 3,
+          "correct": 250,
+          "total": 401,
+          "accuracy": 0.6234413965087282,
+          "unknown_predictions": 11
+        },
+        {
+          "shift_sec": 4,
+          "correct": 240,
+          "total": 401,
+          "accuracy": 0.5985037406483791,
+          "unknown_predictions": 12
+        },
+        {
+          "shift_sec": 5,
+          "correct": 228,
+          "total": 401,
+          "accuracy": 0.5685785536159601,
+          "unknown_predictions": 13
+        }
+      ],
+      "expected_confusions": {
+        "lying_vs_sitting_on_bed": true,
+        "standing_vs_walking": true
+      }
+    },
+    "smoothed": {
+      "overall_accuracy": 0.7381546134663342,
+      "strict_accuracy": {
+        "correct": 296,
+        "total": 401,
+        "accuracy": 0.7381546134663342
+      },
+      "coverage": {
+        "committed_samples": 391,
+        "total_labeled_samples": 401,
+        "coverage": 0.9750623441396509,
+        "selective_correct": 296,
+        "selective_accuracy": 0.7570332480818415,
+        "abstained_samples": 10,
+        "abstained_fraction": 0.02493765586034913
+      },
+      "macro_f1": 0.6748319231344072,
+      "per_class": {
+        "LYING_IN_BED": {
+          "support": 157,
+          "precision": 0.9416058394160584,
+          "recall": 0.821656050955414,
+          "f1": 0.8775510204081631
+        },
+        "OUT_OF_BED": {
+          "support": 19,
+          "precision": 0.56,
+          "recall": 0.7368421052631579,
+          "f1": 0.6363636363636364
+        },
+        "SITTING_ON_BED": {
+          "support": 82,
+          "precision": 0.8352941176470589,
+          "recall": 0.8658536585365854,
+          "f1": 0.8502994011976048
+        },
+        "SITTING_OUTSIDE_BED": {
+          "support": 40,
+          "precision": 0.5507246376811594,
+          "recall": 0.95,
+          "f1": 0.6972477064220184
+        },
+        "STANDING": {
+          "support": 46,
+          "precision": 1.0,
+          "recall": 0.32608695652173914,
+          "f1": 0.4918032786885246
+        },
+        "WALKING": {
+          "support": 57,
+          "precision": 0.48333333333333334,
+          "recall": 0.5087719298245614,
+          "f1": 0.4957264957264957
+        }
+      },
+      "confusion_matrix": {
+        "ground_truth_labels": [
+          "LYING_IN_BED",
+          "OUT_OF_BED",
+          "SITTING_ON_BED",
+          "SITTING_OUTSIDE_BED",
+          "STANDING",
+          "WALKING"
+        ],
+        "predicted_labels": [
+          "LYING_IN_BED",
+          "OUT_OF_BED",
+          "SITTING_ON_BED",
+          "SITTING_OUTSIDE_BED",
+          "STANDING",
+          "UNKNOWN",
+          "WALKING"
+        ],
+        "counts": {
+          "LYING_IN_BED": {
+            "LYING_IN_BED": 129,
+            "OUT_OF_BED": 10,
+            "SITTING_ON_BED": 11,
+            "SITTING_OUTSIDE_BED": 0,
+            "STANDING": 0,
+            "UNKNOWN": 6,
+            "WALKING": 1
+          },
+          "OUT_OF_BED": {
+            "LYING_IN_BED": 0,
+            "OUT_OF_BED": 14,
+            "SITTING_ON_BED": 0,
+            "SITTING_OUTSIDE_BED": 1,
+            "STANDING": 0,
+            "UNKNOWN": 4,
+            "WALKING": 0
+          },
+          "SITTING_ON_BED": {
+            "LYING_IN_BED": 6,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 71,
+            "SITTING_OUTSIDE_BED": 0,
+            "STANDING": 0,
+            "UNKNOWN": 0,
+            "WALKING": 5
+          },
+          "SITTING_OUTSIDE_BED": {
+            "LYING_IN_BED": 0,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 0,
+            "SITTING_OUTSIDE_BED": 38,
+            "STANDING": 0,
+            "UNKNOWN": 0,
+            "WALKING": 2
+          },
+          "STANDING": {
+            "LYING_IN_BED": 1,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 3,
+            "SITTING_OUTSIDE_BED": 4,
+            "STANDING": 15,
+            "UNKNOWN": 0,
+            "WALKING": 23
+          },
+          "WALKING": {
+            "LYING_IN_BED": 1,
+            "OUT_OF_BED": 1,
+            "SITTING_ON_BED": 0,
+            "SITTING_OUTSIDE_BED": 26,
+            "STANDING": 0,
+            "UNKNOWN": 0,
+            "WALKING": 29
+          }
+        },
+        "row_normalized": {
+          "LYING_IN_BED": {
+            "LYING_IN_BED": 0.821656050955414,
+            "OUT_OF_BED": 0.06369426751592357,
+            "SITTING_ON_BED": 0.07006369426751592,
+            "SITTING_OUTSIDE_BED": 0.0,
+            "STANDING": 0.0,
+            "UNKNOWN": 0.03821656050955414,
+            "WALKING": 0.006369426751592357
+          },
+          "OUT_OF_BED": {
+            "LYING_IN_BED": 0.0,
+            "OUT_OF_BED": 0.7368421052631579,
+            "SITTING_ON_BED": 0.0,
+            "SITTING_OUTSIDE_BED": 0.05263157894736842,
+            "STANDING": 0.0,
+            "UNKNOWN": 0.21052631578947367,
+            "WALKING": 0.0
+          },
+          "SITTING_ON_BED": {
+            "LYING_IN_BED": 0.07317073170731707,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.8658536585365854,
+            "SITTING_OUTSIDE_BED": 0.0,
+            "STANDING": 0.0,
+            "UNKNOWN": 0.0,
+            "WALKING": 0.06097560975609756
+          },
+          "SITTING_OUTSIDE_BED": {
+            "LYING_IN_BED": 0.0,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.0,
+            "SITTING_OUTSIDE_BED": 0.95,
+            "STANDING": 0.0,
+            "UNKNOWN": 0.0,
+            "WALKING": 0.05
+          },
+          "STANDING": {
+            "LYING_IN_BED": 0.021739130434782608,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.06521739130434782,
+            "SITTING_OUTSIDE_BED": 0.08695652173913043,
+            "STANDING": 0.32608695652173914,
+            "UNKNOWN": 0.0,
+            "WALKING": 0.5
+          },
+          "WALKING": {
+            "LYING_IN_BED": 0.017543859649122806,
+            "OUT_OF_BED": 0.017543859649122806,
+            "SITTING_ON_BED": 0.0,
+            "SITTING_OUTSIDE_BED": 0.45614035087719296,
+            "STANDING": 0.0,
+            "UNKNOWN": 0.0,
+            "WALKING": 0.5087719298245614
+          }
+        }
+      },
+      "boundary_tolerant_accuracy": {
+        "1_sec": {
+          "correct": 266,
+          "total": 331,
+          "ignored_samples": 70,
+          "accuracy": 0.8036253776435045
+        },
+        "2_sec": {
+          "correct": 240,
+          "total": 295,
+          "ignored_samples": 106,
+          "accuracy": 0.8135593220338984
+        }
+      },
+      "top_off_diagonal_confusions": [
+        {
+          "ground_truth": "WALKING",
+          "predicted": "SITTING_OUTSIDE_BED",
+          "count": 26,
+          "sentence": "WALKING was predicted as SITTING_OUTSIDE_BED for 26 labeled samples (26 seconds)."
+        },
+        {
+          "ground_truth": "STANDING",
+          "predicted": "WALKING",
+          "count": 23,
+          "sentence": "STANDING was predicted as WALKING for 23 labeled samples (23 seconds)."
+        },
+        {
+          "ground_truth": "LYING_IN_BED",
+          "predicted": "SITTING_ON_BED",
+          "count": 11,
+          "sentence": "LYING_IN_BED was predicted as SITTING_ON_BED for 11 labeled samples (11 seconds)."
+        }
+      ],
+      "zero_shift": {
+        "shift_sec": 0,
+        "correct": 296,
+        "total": 401,
+        "accuracy": 0.7381546134663342,
+        "unknown_predictions": 10
+      },
+      "best_shift": {
+        "shift_sec": -1,
+        "correct": 310,
+        "total": 401,
+        "accuracy": 0.773067331670823,
+        "unknown_predictions": 10
+      },
+      "shifts": [
+        {
+          "shift_sec": -5,
+          "correct": 262,
+          "total": 401,
+          "accuracy": 0.6533665835411472,
+          "unknown_predictions": 14
+        },
+        {
+          "shift_sec": -4,
+          "correct": 278,
+          "total": 401,
+          "accuracy": 0.6932668329177057,
+          "unknown_predictions": 13
+        },
+        {
+          "shift_sec": -3,
+          "correct": 294,
+          "total": 401,
+          "accuracy": 0.7331670822942643,
+          "unknown_predictions": 12
+        },
+        {
+          "shift_sec": -2,
+          "correct": 308,
+          "total": 401,
+          "accuracy": 0.7680798004987531,
+          "unknown_predictions": 11
+        },
+        {
+          "shift_sec": -1,
+          "correct": 310,
+          "total": 401,
+          "accuracy": 0.773067331670823,
+          "unknown_predictions": 10
+        },
+        {
+          "shift_sec": 0,
+          "correct": 296,
+          "total": 401,
+          "accuracy": 0.7381546134663342,
+          "unknown_predictions": 10
+        },
+        {
+          "shift_sec": 1,
+          "correct": 282,
+          "total": 401,
+          "accuracy": 0.7032418952618454,
+          "unknown_predictions": 11
+        },
+        {
+          "shift_sec": 2,
+          "correct": 268,
+          "total": 401,
+          "accuracy": 0.6683291770573566,
+          "unknown_predictions": 12
+        },
+        {
+          "shift_sec": 3,
+          "correct": 254,
+          "total": 401,
+          "accuracy": 0.6334164588528678,
+          "unknown_predictions": 13
+        },
+        {
+          "shift_sec": 4,
+          "correct": 242,
+          "total": 401,
+          "accuracy": 0.6034912718204489,
+          "unknown_predictions": 14
+        },
+        {
+          "shift_sec": 5,
+          "correct": 232,
+          "total": 401,
+          "accuracy": 0.5785536159600998,
+          "unknown_predictions": 15
+        }
+      ],
+      "expected_confusions": {
+        "lying_vs_sitting_on_bed": true,
+        "standing_vs_walking": true
+      }
+    },
+    "timeline": {
+      "overall_accuracy": 0.7805486284289277,
+      "strict_accuracy": {
+        "correct": 313,
+        "total": 401,
+        "accuracy": 0.7805486284289277
+      },
+      "coverage": {
+        "committed_samples": 401,
+        "total_labeled_samples": 401,
+        "coverage": 1.0,
+        "selective_correct": 313,
+        "selective_accuracy": 0.7805486284289277,
+        "abstained_samples": 0,
+        "abstained_fraction": 0.0
+      },
+      "macro_f1": 0.7214249386448678,
+      "per_class": {
+        "LYING_IN_BED": {
+          "support": 157,
+          "precision": 0.9539473684210527,
+          "recall": 0.9235668789808917,
+          "f1": 0.9385113268608415
+        },
+        "OUT_OF_BED": {
+          "support": 19,
+          "precision": 0.9411764705882353,
+          "recall": 0.8421052631578947,
+          "f1": 0.8888888888888888
+        },
+        "SITTING_ON_BED": {
+          "support": 82,
+          "precision": 0.8235294117647058,
+          "recall": 0.8536585365853658,
+          "f1": 0.8383233532934131
+        },
+        "SITTING_OUTSIDE_BED": {
+          "support": 40,
+          "precision": 0.5428571428571428,
+          "recall": 0.95,
+          "f1": 0.6909090909090908
+        },
+        "STANDING": {
+          "support": 46,
+          "precision": 0.8823529411764706,
+          "recall": 0.32608695652173914,
+          "f1": 0.47619047619047616
+        },
+        "WALKING": {
+          "support": 57,
+          "precision": 0.48333333333333334,
+          "recall": 0.5087719298245614,
+          "f1": 0.4957264957264957
+        }
+      },
+      "confusion_matrix": {
+        "ground_truth_labels": [
+          "LYING_IN_BED",
+          "OUT_OF_BED",
+          "SITTING_ON_BED",
+          "SITTING_OUTSIDE_BED",
+          "STANDING",
+          "WALKING"
+        ],
+        "predicted_labels": [
+          "LYING_IN_BED",
+          "OUT_OF_BED",
+          "SITTING_ON_BED",
+          "SITTING_OUTSIDE_BED",
+          "STANDING",
+          "WALKING"
+        ],
+        "counts": {
+          "LYING_IN_BED": {
+            "LYING_IN_BED": 145,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 11,
+            "SITTING_OUTSIDE_BED": 0,
+            "STANDING": 0,
+            "WALKING": 1
+          },
+          "OUT_OF_BED": {
+            "LYING_IN_BED": 0,
+            "OUT_OF_BED": 16,
+            "SITTING_ON_BED": 0,
+            "SITTING_OUTSIDE_BED": 0,
+            "STANDING": 0,
+            "WALKING": 3
+          },
+          "SITTING_ON_BED": {
+            "LYING_IN_BED": 5,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 70,
+            "SITTING_OUTSIDE_BED": 1,
+            "STANDING": 2,
+            "WALKING": 4
+          },
+          "SITTING_OUTSIDE_BED": {
+            "LYING_IN_BED": 0,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 0,
+            "SITTING_OUTSIDE_BED": 38,
+            "STANDING": 0,
+            "WALKING": 2
+          },
+          "STANDING": {
+            "LYING_IN_BED": 1,
+            "OUT_OF_BED": 0,
+            "SITTING_ON_BED": 4,
+            "SITTING_OUTSIDE_BED": 5,
+            "STANDING": 15,
+            "WALKING": 21
+          },
+          "WALKING": {
+            "LYING_IN_BED": 1,
+            "OUT_OF_BED": 1,
+            "SITTING_ON_BED": 0,
+            "SITTING_OUTSIDE_BED": 26,
+            "STANDING": 0,
+            "WALKING": 29
+          }
+        },
+        "row_normalized": {
+          "LYING_IN_BED": {
+            "LYING_IN_BED": 0.9235668789808917,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.07006369426751592,
+            "SITTING_OUTSIDE_BED": 0.0,
+            "STANDING": 0.0,
+            "WALKING": 0.006369426751592357
+          },
+          "OUT_OF_BED": {
+            "LYING_IN_BED": 0.0,
+            "OUT_OF_BED": 0.8421052631578947,
+            "SITTING_ON_BED": 0.0,
+            "SITTING_OUTSIDE_BED": 0.0,
+            "STANDING": 0.0,
+            "WALKING": 0.15789473684210525
+          },
+          "SITTING_ON_BED": {
+            "LYING_IN_BED": 0.06097560975609756,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.8536585365853658,
+            "SITTING_OUTSIDE_BED": 0.012195121951219513,
+            "STANDING": 0.024390243902439025,
+            "WALKING": 0.04878048780487805
+          },
+          "SITTING_OUTSIDE_BED": {
+            "LYING_IN_BED": 0.0,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.0,
+            "SITTING_OUTSIDE_BED": 0.95,
+            "STANDING": 0.0,
+            "WALKING": 0.05
+          },
+          "STANDING": {
+            "LYING_IN_BED": 0.021739130434782608,
+            "OUT_OF_BED": 0.0,
+            "SITTING_ON_BED": 0.08695652173913043,
+            "SITTING_OUTSIDE_BED": 0.10869565217391304,
+            "STANDING": 0.32608695652173914,
+            "WALKING": 0.45652173913043476
+          },
+          "WALKING": {
+            "LYING_IN_BED": 0.017543859649122806,
+            "OUT_OF_BED": 0.017543859649122806,
+            "SITTING_ON_BED": 0.0,
+            "SITTING_OUTSIDE_BED": 0.45614035087719296,
+            "STANDING": 0.0,
+            "WALKING": 0.5087719298245614
+          }
+        }
+      },
+      "boundary_tolerant_accuracy": {
+        "1_sec": {
+          "correct": 284,
+          "total": 331,
+          "ignored_samples": 70,
+          "accuracy": 0.8580060422960725
+        },
+        "2_sec": {
+          "correct": 257,
+          "total": 295,
+          "ignored_samples": 106,
+          "accuracy": 0.8711864406779661
+        }
+      },
+      "top_off_diagonal_confusions": [
+        {
+          "ground_truth": "WALKING",
+          "predicted": "SITTING_OUTSIDE_BED",
+          "count": 26,
+          "sentence": "WALKING was predicted as SITTING_OUTSIDE_BED for 26 labeled samples (26 seconds)."
+        },
+        {
+          "ground_truth": "STANDING",
+          "predicted": "WALKING",
+          "count": 21,
+          "sentence": "STANDING was predicted as WALKING for 21 labeled samples (21 seconds)."
+        },
+        {
+          "ground_truth": "LYING_IN_BED",
+          "predicted": "SITTING_ON_BED",
+          "count": 11,
+          "sentence": "LYING_IN_BED was predicted as SITTING_ON_BED for 11 labeled samples (11 seconds)."
+        }
+      ],
+      "zero_shift": {
+        "shift_sec": 0,
+        "correct": 313,
+        "total": 401,
+        "accuracy": 0.7805486284289277,
+        "unknown_predictions": 0
+      },
+      "best_shift": {
+        "shift_sec": -2,
+        "correct": 331,
+        "total": 401,
+        "accuracy": 0.8254364089775561,
+        "unknown_predictions": 1
+      },
+      "shifts": [
+        {
+          "shift_sec": -5,
+          "correct": 286,
+          "total": 401,
+          "accuracy": 0.713216957605985,
+          "unknown_predictions": 4
+        },
+        {
+          "shift_sec": -4,
+          "correct": 303,
+          "total": 401,
+          "accuracy": 0.7556109725685786,
+          "unknown_predictions": 3
+        },
+        {
+          "shift_sec": -3,
+          "correct": 320,
+          "total": 401,
+          "accuracy": 0.7980049875311721,
+          "unknown_predictions": 2
+        },
+        {
+          "shift_sec": -2,
+          "correct": 331,
+          "total": 401,
+          "accuracy": 0.8254364089775561,
+          "unknown_predictions": 1
+        },
+        {
+          "shift_sec": -1,
+          "correct": 329,
+          "total": 401,
+          "accuracy": 0.8204488778054863,
+          "unknown_predictions": 0
+        },
+        {
+          "shift_sec": 0,
+          "correct": 313,
+          "total": 401,
+          "accuracy": 0.7805486284289277,
+          "unknown_predictions": 0
+        },
+        {
+          "shift_sec": 1,
+          "correct": 299,
+          "total": 401,
+          "accuracy": 0.7456359102244389,
+          "unknown_predictions": 1
+        },
+        {
+          "shift_sec": 2,
+          "correct": 284,
+          "total": 401,
+          "accuracy": 0.7082294264339152,
+          "unknown_predictions": 2
+        },
+        {
+          "shift_sec": 3,
+          "correct": 271,
+          "total": 401,
+          "accuracy": 0.6758104738154613,
+          "unknown_predictions": 3
+        },
+        {
+          "shift_sec": 4,
+          "correct": 259,
+          "total": 401,
+          "accuracy": 0.6458852867830424,
+          "unknown_predictions": 4
+        },
+        {
+          "shift_sec": 5,
+          "correct": 250,
+          "total": 401,
+          "accuracy": 0.6234413965087282,
+          "unknown_predictions": 5
+        }
+      ],
+      "expected_confusions": {
+        "lying_vs_sitting_on_bed": true,
+        "standing_vs_walking": true
+      }
+    }
+  },
+  "bed_event_evaluation": {
+    "sample_size_note": "There are only 2 annotated bed exits and 2 annotated bed returns (4 positive events); one miss changes per-kind recall by 50 percentage points. These counts cannot support strong claims.",
+    "matching_rule": "One-to-one nearest same-kind event matching using confirmed_time.",
+    "reference_trace_note": "The GT-segment detector run uses a deterministic state trace constructed from gt_events.csv event intervals and notes. It is an annotation-derived idealized trace, not an independently frame-labeled reconstruction; trap behavior is encoded from the annotated notes.",
+    "timing_error_definition": "Predicted timestamp minus annotated timestamp; detection delay is predicted confirmed_time minus annotated start_time. Detector latency is predicted confirmed_time minus predicted start_time.",
+    "trap_matching_rule": "A trap is counted as triggered when a detected bed_exit interval overlaps the annotated not_an_exit interval.",
+    "unannotated_trap_note": "UNKNOWN blip is not one of the 3 gt_events.csv negative traps; the existing test_unknown_two_second_blip_does_not_create_exit unit test covers that case separately.",
+    "modes": {
+      "ground_truth_segments": {
+        "detected_events": [
+          {
+            "type": "bed_exit",
+            "start_time": 160.0,
+            "confirmed_time": 163.8,
+            "previous_state": "SITTING_ON_BED",
+            "current_state": "STANDING",
+            "confidence": 1.0
+          },
+          {
+            "type": "bed_return",
+            "start_time": 165.0,
+            "confirmed_time": 174.8,
+            "previous_state": "OUT",
+            "current_state": "LYING_IN_BED",
+            "confidence": 1.0
+          },
+          {
+            "type": "bed_exit",
+            "start_time": 182.0,
+            "confirmed_time": 185.8,
+            "previous_state": "SITTING_ON_BED",
+            "current_state": "WALKING",
+            "confidence": 1.0
+          },
+          {
+            "type": "bed_return",
+            "start_time": 300.0,
+            "confirmed_time": 306.8,
+            "previous_state": "OUT",
+            "current_state": "LYING_IN_BED",
+            "confidence": 1.0
+          },
+          {
+            "type": "bed_exit",
+            "start_time": 340.0,
+            "confirmed_time": 349.8,
+            "previous_state": "LYING_IN_BED",
+            "current_state": "OUT_OF_BED",
+            "confidence": 0.8,
+            "note": "via_out_of_view"
+          },
+          {
+            "type": "bed_return",
+            "start_time": 385.0,
+            "confirmed_time": 391.8,
+            "previous_state": "OUT",
+            "current_state": "LYING_IN_BED",
+            "confidence": 1.0
+          }
+        ],
+        "tolerances": {
+          "5": {
+            "tolerance_sec": 5,
+            "bed_exit": {
+              "tp": 0,
+              "fp": 3,
+              "fn": 2,
+              "precision": {
+                "correct": 0,
+                "total": 3,
+                "value": 0.0
+              },
+              "recall": {
+                "correct": 0,
+                "total": 2,
+                "value": 0.0
+              },
+              "f1": 0.0,
+              "matches": [],
+              "nearest_candidates_for_missed_ground_truth": [
+                {
+                  "ground_truth_event_index": 0,
+                  "predicted_event_index": 1,
+                  "kind": "bed_exit",
+                  "ground_truth_start_time": 180.0,
+                  "predicted_start_time": 182.0,
+                  "start_time_error_sec": 2.0,
+                  "ground_truth_confirmed_time": 195.0,
+                  "predicted_confirmed_time": 185.8,
+                  "confirmed_time_error_sec": -9.199999999999989,
+                  "ground_truth_duration_sec": 15.0,
+                  "detection_delay_from_gt_start_sec": 5.800000000000011,
+                  "detector_confirmation_latency_sec": 3.8000000000000114,
+                  "scored_as_match": false,
+                  "nearest_prediction_available": true,
+                  "outside_tolerance_sec": 9.199999999999989
+                },
+                {
+                  "ground_truth_event_index": 1,
+                  "predicted_event_index": 2,
+                  "kind": "bed_exit",
+                  "ground_truth_start_time": 340.0,
+                  "predicted_start_time": 340.0,
+                  "start_time_error_sec": 0.0,
+                  "ground_truth_confirmed_time": 355.0,
+                  "predicted_confirmed_time": 349.8,
+                  "confirmed_time_error_sec": -5.199999999999989,
+                  "ground_truth_duration_sec": 15.0,
+                  "detection_delay_from_gt_start_sec": 9.800000000000011,
+                  "detector_confirmation_latency_sec": 9.800000000000011,
+                  "scored_as_match": false,
+                  "nearest_prediction_available": true,
+                  "outside_tolerance_sec": 5.199999999999989
+                }
+              ],
+              "false_predictions": [
+                {
+                  "predicted_event_index": 0,
+                  "type": "bed_exit",
+                  "start_time": 160.0,
+                  "confirmed_time": 163.8,
+                  "previous_state": "SITTING_ON_BED",
+                  "current_state": "STANDING",
+                  "confidence": 1.0,
+                  "classification": "annotated_trap_false_positive",
+                  "explanation": "overlaps annotated non-exit trap(s): brief stand"
+                },
+                {
+                  "predicted_event_index": 1,
+                  "type": "bed_exit",
+                  "start_time": 182.0,
+                  "confirmed_time": 185.8,
+                  "previous_state": "SITTING_ON_BED",
+                  "current_state": "WALKING",
+                  "confidence": 1.0,
+                  "classification": "outside_matching_tolerance",
+                  "nearest_ground_truth": {
+                    "event_index": 0,
+                    "confirmed_time": 195.0,
+                    "confirmed_time_error_sec": -9.199999999999989
+                  },
+                  "explanation": "not linked to an annotated trap; nearest GT bed_exit is 9.2s away, outside the +/-5s matching tolerance"
+                },
+                {
+                  "predicted_event_index": 2,
+                  "type": "bed_exit",
+                  "start_time": 340.0,
+                  "confirmed_time": 349.8,
+                  "previous_state": "LYING_IN_BED",
+                  "current_state": "OUT_OF_BED",
+                  "confidence": 0.8,
+                  "note": "via_out_of_view",
+                  "classification": "outside_matching_tolerance",
+                  "nearest_ground_truth": {
+                    "event_index": 2,
+                    "confirmed_time": 355.0,
+                    "confirmed_time_error_sec": -5.199999999999989
+                  },
+                  "explanation": "not linked to an annotated trap; nearest GT bed_exit is 5.2s away, outside the +/-5s matching tolerance"
+                }
+              ],
+              "missed_ground_truth_indices": [
+                0,
+                1
+              ]
+            },
+            "bed_return": {
+              "tp": 2,
+              "fp": 1,
+              "fn": 0,
+              "precision": {
+                "correct": 2,
+                "total": 3,
+                "value": 0.6666666666666666
+              },
+              "recall": {
+                "correct": 2,
+                "total": 2,
+                "value": 1.0
+              },
+              "f1": 0.8,
+              "matches": [
+                {
+                  "ground_truth_event_index": 0,
+                  "predicted_event_index": 1,
+                  "kind": "bed_return",
+                  "ground_truth_start_time": 300.0,
+                  "predicted_start_time": 300.0,
+                  "start_time_error_sec": 0.0,
+                  "ground_truth_confirmed_time": 308.0,
+                  "predicted_confirmed_time": 306.8,
+                  "confirmed_time_error_sec": -1.1999999999999886,
+                  "ground_truth_duration_sec": 8.0,
+                  "detection_delay_from_gt_start_sec": 6.800000000000011,
+                  "detector_confirmation_latency_sec": 6.800000000000011
+                },
+                {
+                  "ground_truth_event_index": 1,
+                  "predicted_event_index": 2,
+                  "kind": "bed_return",
+                  "ground_truth_start_time": 385.0,
+                  "predicted_start_time": 385.0,
+                  "start_time_error_sec": 0.0,
+                  "ground_truth_confirmed_time": 395.0,
+                  "predicted_confirmed_time": 391.8,
+                  "confirmed_time_error_sec": -3.1999999999999886,
+                  "ground_truth_duration_sec": 10.0,
+                  "detection_delay_from_gt_start_sec": 6.800000000000011,
+                  "detector_confirmation_latency_sec": 6.800000000000011
+                }
+              ],
+              "nearest_candidates_for_missed_ground_truth": [],
+              "false_predictions": [
+                {
+                  "predicted_event_index": 0,
+                  "type": "bed_return",
+                  "start_time": 165.0,
+                  "confirmed_time": 174.8,
+                  "previous_state": "OUT",
+                  "current_state": "LYING_IN_BED",
+                  "confidence": 1.0
+                }
+              ],
+              "missed_ground_truth_indices": []
+            },
+            "trap_results": {
+              "correctly_ignored": 2,
+              "total": 3,
+              "cases": [
+                {
+                  "name": "sit-up",
+                  "start_time": 100.0,
+                  "end_time": 115.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                },
+                {
+                  "name": "edge sitting",
+                  "start_time": 130.0,
+                  "end_time": 160.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                },
+                {
+                  "name": "brief stand",
+                  "start_time": 160.0,
+                  "end_time": 170.0,
+                  "correctly_ignored": false,
+                  "triggered_exit_count": 1,
+                  "triggered_exits": [
+                    {
+                      "type": "bed_exit",
+                      "start_time": 160.0,
+                      "confirmed_time": 163.8,
+                      "previous_state": "SITTING_ON_BED",
+                      "current_state": "STANDING",
+                      "confidence": 1.0
+                    }
+                  ]
+                }
+              ]
+            }
+          },
+          "10": {
+            "tolerance_sec": 10,
+            "bed_exit": {
+              "tp": 2,
+              "fp": 1,
+              "fn": 0,
+              "precision": {
+                "correct": 2,
+                "total": 3,
+                "value": 0.6666666666666666
+              },
+              "recall": {
+                "correct": 2,
+                "total": 2,
+                "value": 1.0
+              },
+              "f1": 0.8,
+              "matches": [
+                {
+                  "ground_truth_event_index": 0,
+                  "predicted_event_index": 1,
+                  "kind": "bed_exit",
+                  "ground_truth_start_time": 180.0,
+                  "predicted_start_time": 182.0,
+                  "start_time_error_sec": 2.0,
+                  "ground_truth_confirmed_time": 195.0,
+                  "predicted_confirmed_time": 185.8,
+                  "confirmed_time_error_sec": -9.199999999999989,
+                  "ground_truth_duration_sec": 15.0,
+                  "detection_delay_from_gt_start_sec": 5.800000000000011,
+                  "detector_confirmation_latency_sec": 3.8000000000000114
+                },
+                {
+                  "ground_truth_event_index": 1,
+                  "predicted_event_index": 2,
+                  "kind": "bed_exit",
+                  "ground_truth_start_time": 340.0,
+                  "predicted_start_time": 340.0,
+                  "start_time_error_sec": 0.0,
+                  "ground_truth_confirmed_time": 355.0,
+                  "predicted_confirmed_time": 349.8,
+                  "confirmed_time_error_sec": -5.199999999999989,
+                  "ground_truth_duration_sec": 15.0,
+                  "detection_delay_from_gt_start_sec": 9.800000000000011,
+                  "detector_confirmation_latency_sec": 9.800000000000011
+                }
+              ],
+              "nearest_candidates_for_missed_ground_truth": [],
+              "false_predictions": [
+                {
+                  "predicted_event_index": 0,
+                  "type": "bed_exit",
+                  "start_time": 160.0,
+                  "confirmed_time": 163.8,
+                  "previous_state": "SITTING_ON_BED",
+                  "current_state": "STANDING",
+                  "confidence": 1.0,
+                  "classification": "annotated_trap_false_positive",
+                  "explanation": "overlaps annotated non-exit trap(s): brief stand"
+                }
+              ],
+              "missed_ground_truth_indices": []
+            },
+            "bed_return": {
+              "tp": 2,
+              "fp": 1,
+              "fn": 0,
+              "precision": {
+                "correct": 2,
+                "total": 3,
+                "value": 0.6666666666666666
+              },
+              "recall": {
+                "correct": 2,
+                "total": 2,
+                "value": 1.0
+              },
+              "f1": 0.8,
+              "matches": [
+                {
+                  "ground_truth_event_index": 0,
+                  "predicted_event_index": 1,
+                  "kind": "bed_return",
+                  "ground_truth_start_time": 300.0,
+                  "predicted_start_time": 300.0,
+                  "start_time_error_sec": 0.0,
+                  "ground_truth_confirmed_time": 308.0,
+                  "predicted_confirmed_time": 306.8,
+                  "confirmed_time_error_sec": -1.1999999999999886,
+                  "ground_truth_duration_sec": 8.0,
+                  "detection_delay_from_gt_start_sec": 6.800000000000011,
+                  "detector_confirmation_latency_sec": 6.800000000000011
+                },
+                {
+                  "ground_truth_event_index": 1,
+                  "predicted_event_index": 2,
+                  "kind": "bed_return",
+                  "ground_truth_start_time": 385.0,
+                  "predicted_start_time": 385.0,
+                  "start_time_error_sec": 0.0,
+                  "ground_truth_confirmed_time": 395.0,
+                  "predicted_confirmed_time": 391.8,
+                  "confirmed_time_error_sec": -3.1999999999999886,
+                  "ground_truth_duration_sec": 10.0,
+                  "detection_delay_from_gt_start_sec": 6.800000000000011,
+                  "detector_confirmation_latency_sec": 6.800000000000011
+                }
+              ],
+              "nearest_candidates_for_missed_ground_truth": [],
+              "false_predictions": [
+                {
+                  "predicted_event_index": 0,
+                  "type": "bed_return",
+                  "start_time": 165.0,
+                  "confirmed_time": 174.8,
+                  "previous_state": "OUT",
+                  "current_state": "LYING_IN_BED",
+                  "confidence": 1.0
+                }
+              ],
+              "missed_ground_truth_indices": []
+            },
+            "trap_results": {
+              "correctly_ignored": 2,
+              "total": 3,
+              "cases": [
+                {
+                  "name": "sit-up",
+                  "start_time": 100.0,
+                  "end_time": 115.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                },
+                {
+                  "name": "edge sitting",
+                  "start_time": 130.0,
+                  "end_time": 160.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                },
+                {
+                  "name": "brief stand",
+                  "start_time": 160.0,
+                  "end_time": 170.0,
+                  "correctly_ignored": false,
+                  "triggered_exit_count": 1,
+                  "triggered_exits": [
+                    {
+                      "type": "bed_exit",
+                      "start_time": 160.0,
+                      "confirmed_time": 163.8,
+                      "previous_state": "SITTING_ON_BED",
+                      "current_state": "STANDING",
+                      "confidence": 1.0
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        }
+      },
+      "predicted_segments": {
+        "detected_events": [
+          {
+            "type": "bed_exit",
+            "start_time": 174.6,
+            "confirmed_time": 180.8,
+            "previous_state": "LYING_IN_BED",
+            "current_state": "STANDING",
+            "confidence": 0.677468430433944
+          },
+          {
+            "type": "bed_return",
+            "start_time": 269.8,
+            "confirmed_time": 294.2,
+            "previous_state": "OUT",
+            "current_state": "LYING_IN_BED",
+            "confidence": 0.7846672820347034
+          }
+        ],
+        "tolerances": {
+          "5": {
+            "tolerance_sec": 5,
+            "bed_exit": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 2,
+              "precision": {
+                "correct": 0,
+                "total": 1,
+                "value": 0.0
+              },
+              "recall": {
+                "correct": 0,
+                "total": 2,
+                "value": 0.0
+              },
+              "f1": 0.0,
+              "matches": [],
+              "nearest_candidates_for_missed_ground_truth": [
+                {
+                  "ground_truth_event_index": 0,
+                  "predicted_event_index": 0,
+                  "kind": "bed_exit",
+                  "ground_truth_start_time": 180.0,
+                  "predicted_start_time": 174.6,
+                  "start_time_error_sec": -5.400000000000006,
+                  "ground_truth_confirmed_time": 195.0,
+                  "predicted_confirmed_time": 180.8,
+                  "confirmed_time_error_sec": -14.199999999999989,
+                  "ground_truth_duration_sec": 15.0,
+                  "detection_delay_from_gt_start_sec": 0.8000000000000114,
+                  "detector_confirmation_latency_sec": 6.200000000000017,
+                  "scored_as_match": false,
+                  "nearest_prediction_available": true,
+                  "outside_tolerance_sec": 14.199999999999989
+                },
+                {
+                  "ground_truth_event_index": 1,
+                  "kind": "bed_exit",
+                  "scored_as_match": false,
+                  "nearest_prediction_available": false
+                }
+              ],
+              "false_predictions": [
+                {
+                  "predicted_event_index": 0,
+                  "type": "bed_exit",
+                  "start_time": 174.6,
+                  "confirmed_time": 180.8,
+                  "previous_state": "LYING_IN_BED",
+                  "current_state": "STANDING",
+                  "confidence": 0.677468430433944,
+                  "classification": "outside_matching_tolerance",
+                  "nearest_ground_truth": {
+                    "event_index": 0,
+                    "confirmed_time": 195.0,
+                    "confirmed_time_error_sec": -14.199999999999989
+                  },
+                  "explanation": "not linked to an annotated trap; nearest GT bed_exit is 14.2s away, outside the +/-5s matching tolerance"
+                }
+              ],
+              "missed_ground_truth_indices": [
+                0,
+                1
+              ]
+            },
+            "bed_return": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 2,
+              "precision": {
+                "correct": 0,
+                "total": 1,
+                "value": 0.0
+              },
+              "recall": {
+                "correct": 0,
+                "total": 2,
+                "value": 0.0
+              },
+              "f1": 0.0,
+              "matches": [],
+              "nearest_candidates_for_missed_ground_truth": [
+                {
+                  "ground_truth_event_index": 0,
+                  "predicted_event_index": 0,
+                  "kind": "bed_return",
+                  "ground_truth_start_time": 300.0,
+                  "predicted_start_time": 269.8,
+                  "start_time_error_sec": -30.19999999999999,
+                  "ground_truth_confirmed_time": 308.0,
+                  "predicted_confirmed_time": 294.2,
+                  "confirmed_time_error_sec": -13.800000000000011,
+                  "ground_truth_duration_sec": 8.0,
+                  "detection_delay_from_gt_start_sec": -5.800000000000011,
+                  "detector_confirmation_latency_sec": 24.399999999999977,
+                  "scored_as_match": false,
+                  "nearest_prediction_available": true,
+                  "outside_tolerance_sec": 13.800000000000011
+                },
+                {
+                  "ground_truth_event_index": 1,
+                  "kind": "bed_return",
+                  "scored_as_match": false,
+                  "nearest_prediction_available": false
+                }
+              ],
+              "false_predictions": [
+                {
+                  "predicted_event_index": 0,
+                  "type": "bed_return",
+                  "start_time": 269.8,
+                  "confirmed_time": 294.2,
+                  "previous_state": "OUT",
+                  "current_state": "LYING_IN_BED",
+                  "confidence": 0.7846672820347034
+                }
+              ],
+              "missed_ground_truth_indices": [
+                0,
+                1
+              ]
+            },
+            "trap_results": {
+              "correctly_ignored": 3,
+              "total": 3,
+              "cases": [
+                {
+                  "name": "sit-up",
+                  "start_time": 100.0,
+                  "end_time": 115.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                },
+                {
+                  "name": "edge sitting",
+                  "start_time": 130.0,
+                  "end_time": 160.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                },
+                {
+                  "name": "brief stand",
+                  "start_time": 160.0,
+                  "end_time": 170.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                }
+              ]
+            }
+          },
+          "10": {
+            "tolerance_sec": 10,
+            "bed_exit": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 2,
+              "precision": {
+                "correct": 0,
+                "total": 1,
+                "value": 0.0
+              },
+              "recall": {
+                "correct": 0,
+                "total": 2,
+                "value": 0.0
+              },
+              "f1": 0.0,
+              "matches": [],
+              "nearest_candidates_for_missed_ground_truth": [
+                {
+                  "ground_truth_event_index": 0,
+                  "predicted_event_index": 0,
+                  "kind": "bed_exit",
+                  "ground_truth_start_time": 180.0,
+                  "predicted_start_time": 174.6,
+                  "start_time_error_sec": -5.400000000000006,
+                  "ground_truth_confirmed_time": 195.0,
+                  "predicted_confirmed_time": 180.8,
+                  "confirmed_time_error_sec": -14.199999999999989,
+                  "ground_truth_duration_sec": 15.0,
+                  "detection_delay_from_gt_start_sec": 0.8000000000000114,
+                  "detector_confirmation_latency_sec": 6.200000000000017,
+                  "scored_as_match": false,
+                  "nearest_prediction_available": true,
+                  "outside_tolerance_sec": 14.199999999999989
+                },
+                {
+                  "ground_truth_event_index": 1,
+                  "kind": "bed_exit",
+                  "scored_as_match": false,
+                  "nearest_prediction_available": false
+                }
+              ],
+              "false_predictions": [
+                {
+                  "predicted_event_index": 0,
+                  "type": "bed_exit",
+                  "start_time": 174.6,
+                  "confirmed_time": 180.8,
+                  "previous_state": "LYING_IN_BED",
+                  "current_state": "STANDING",
+                  "confidence": 0.677468430433944,
+                  "classification": "outside_matching_tolerance",
+                  "nearest_ground_truth": {
+                    "event_index": 0,
+                    "confirmed_time": 195.0,
+                    "confirmed_time_error_sec": -14.199999999999989
+                  },
+                  "explanation": "not linked to an annotated trap; nearest GT bed_exit is 14.2s away, outside the +/-10s matching tolerance"
+                }
+              ],
+              "missed_ground_truth_indices": [
+                0,
+                1
+              ]
+            },
+            "bed_return": {
+              "tp": 0,
+              "fp": 1,
+              "fn": 2,
+              "precision": {
+                "correct": 0,
+                "total": 1,
+                "value": 0.0
+              },
+              "recall": {
+                "correct": 0,
+                "total": 2,
+                "value": 0.0
+              },
+              "f1": 0.0,
+              "matches": [],
+              "nearest_candidates_for_missed_ground_truth": [
+                {
+                  "ground_truth_event_index": 0,
+                  "predicted_event_index": 0,
+                  "kind": "bed_return",
+                  "ground_truth_start_time": 300.0,
+                  "predicted_start_time": 269.8,
+                  "start_time_error_sec": -30.19999999999999,
+                  "ground_truth_confirmed_time": 308.0,
+                  "predicted_confirmed_time": 294.2,
+                  "confirmed_time_error_sec": -13.800000000000011,
+                  "ground_truth_duration_sec": 8.0,
+                  "detection_delay_from_gt_start_sec": -5.800000000000011,
+                  "detector_confirmation_latency_sec": 24.399999999999977,
+                  "scored_as_match": false,
+                  "nearest_prediction_available": true,
+                  "outside_tolerance_sec": 13.800000000000011
+                },
+                {
+                  "ground_truth_event_index": 1,
+                  "kind": "bed_return",
+                  "scored_as_match": false,
+                  "nearest_prediction_available": false
+                }
+              ],
+              "false_predictions": [
+                {
+                  "predicted_event_index": 0,
+                  "type": "bed_return",
+                  "start_time": 269.8,
+                  "confirmed_time": 294.2,
+                  "previous_state": "OUT",
+                  "current_state": "LYING_IN_BED",
+                  "confidence": 0.7846672820347034
+                }
+              ],
+              "missed_ground_truth_indices": [
+                0,
+                1
+              ]
+            },
+            "trap_results": {
+              "correctly_ignored": 3,
+              "total": 3,
+              "cases": [
+                {
+                  "name": "sit-up",
+                  "start_time": 100.0,
+                  "end_time": 115.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                },
+                {
+                  "name": "edge sitting",
+                  "start_time": 130.0,
+                  "end_time": 160.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                },
+                {
+                  "name": "brief stand",
+                  "start_time": 160.0,
+                  "end_time": 170.0,
+                  "correctly_ignored": true,
+                  "triggered_exit_count": 0,
+                  "triggered_exits": []
+                }
+              ]
+            }
+          }
+        }
+      }
+    },
+    "stored_predicted_event_output": {
+      "path": "data\\processed\\events.json",
+      "event_count": 2,
+      "agrees_with_rerun_on_predicted_segments": true
+    }
+  }
+}

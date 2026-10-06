@@ -396,28 +396,25 @@ def vlm_describe_clip(
         bed_polygon,
         brightness_factor,
     )
-    lighting_note = (
-        "This sample is brightness-reduced for a simulated low-light robustness "
-        "check; the source scene itself may not be dim."
-        if brightness_factor < 1
-        else ""
+    frame_count_text = (
+        f"{len(frames)} frame{'s' if len(frames) != 1 else ''}"
     )
     prompt = (
-        f"These are {len(frames)} frames from a fixed camera, in time order, "
+        f"These are {frame_count_text} from a fixed camera, in time order, "
         "with timestamps. The red polygon is the bed. Describe ONLY the "
-        "elderly patient. Ignore any other person when describing "
-        "posture/location, but report whether another person is present.\n"
-        f"{lighting_note}\n"
+        "elderly patient. Ignore any other person and do not describe them. "
+        "Report whether another person is present in the other_person_present "
+        "field.\n"
         f"Answer this narrow question: {question}\n"
-        "Reply with JSON only, using exactly this schema:\n"
-        '{"patient_visible": true, '
-        '"location": "on_bed|beside_bed|floor|chair|elsewhere|not_visible", '
-        '"posture": "lying|sitting|standing|walking|unknown", '
-        '"other_person_present": false, "confidence": 0.0, '
-        '"evidence": "one short sentence"}\n'
-        'If you cannot tell, use "unknown" or "not_visible". Do not guess. '
-        "Use a boolean for the two boolean fields and a numeric confidence "
-        "between 0 and 1."
+        "Reply with JSON only, using exactly these fields and types:\n"
+        '{"patient_visible": false, "location": "not_visible", '
+        '"posture": "unknown", "other_person_present": false, '
+        '"confidence": 0.0, "evidence": "One short sentence."}\n'
+        'location must be one of "on_bed", "beside_bed", "floor", "chair", '
+        '"elsewhere", or "not_visible". posture must be one of "lying", '
+        '"sitting", "standing", "walking", or "unknown". If you cannot tell, '
+        'use "unknown" or "not_visible". Do not guess. Use booleans for the '
+        "boolean fields and a numeric confidence from 0 to 1."
     )
     response: dict[str, Any] | None = None
     validation_error = ""

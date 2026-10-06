@@ -1,76 +1,135 @@
-"""Local Ollama VLM client and strict response validation."""
+"""Gemini VLM client and strict response validation."""
 
 from __future__ import annotations
 
 import base64
 import json
 import math
+import os
+from pathlib import Path
 from typing import Any
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
+
+from dotenv import load_dotenv
 
 from src.agent_tools import VLMFrame
 
 
 class VLMUnavailableError(RuntimeError):
-    """The configured local VLM could not complete a request."""
+    """The configured VLM could not complete a request."""
 
 
-class OllamaVLMClient:
-    """Send ordered image frames to a local Ollama vision model."""
+class GeminiVLMClient:
+    """Send ordered image frames to the Gemini API."""
 
     def __init__(
         self,
-        base_url: str = "http://localhost:11434",
-        model: str = "qwen2.5vl:7b",
-        timeout_sec: float = 300,
+        model: str = "gemini-2.5-flash",
+        api_key_env: str = "GEMINI_API_KEY",
+        timeout_sec: float = 120,
         temperature: float = 0,
-        context_length: int = 32768,
+        allow_cloud_upload: bool = False,
     ) -> None:
-        if not base_url.startswith(("http://", "https://")):
-            raise ValueError("Ollama base_url must use HTTP or HTTPS")
         if timeout_sec <= 0:
             raise ValueError("timeout_sec must be positive")
         if temperature != 0:
             raise ValueError("The constrained VLM client requires temperature=0")
-        if context_length <= 0:
-            raise ValueError("context_length must be positive")
-        self.base_url = base_url.rstrip("/")
+        if not api_key_env:
+            raise ValueError("api_key_env must not be empty")
         self._model = model
+        self.api_key_env = api_key_env
         self.timeout_sec = float(timeout_sec)
-        self.context_length = int(context_length)
+        self.allow_cloud_upload = allow_cloud_upload
 
     @property
     def model(self) -> str:
-        return (
-            f"ollama:{self.base_url}:{self._model}:temperature=0:"
-            f"num_ctx={self.context_length}"
-        )
+        return f"gemini:{self._model}:temperature=0"
 
     def describe(self, frames: list[VLMFrame], prompt: str) -> str:
-        payload = {
-            "model": self._model,
-            "stream": False,
-            "format": "json",
-            "options": {
-                "temperature": 0,
-                "num_ctx": self.context_length,
+        if not self.allow_cloud_upload:
+            raise VLMUnavailableError(
+                "Gemini image upload is disabled; explicitly allow cloud upload "
+                "before sending patient frames."
+            )
+        if not frames:
+            raise ValueError("At least one image frame is required")
+        env_path = Path(__file__).resolve().parents[1] / ".env"
+        load_dotenv(dotenv_path=env_path, override=False)
+        api_key = os.environ.get(self.api_key_env, "").strip()
+        if not api_key or api_key.lower() in {
+            "your_gemini_api_key_here",
+            "paste_your_gemini_api_key_here",
+            "replace_with_your_gemini_api_key",
+        }:
+            raise VLMUnavailableError(
+                f"Set a real Gemini API key in {env_path} or the "
+                f"{self.api_key_env} environment variable."
+            )
+
+        properties = {
+            "patient_visible": {"type": "BOOLEAN"},
+            "location": {
+                "type": "STRING",
+                "enum": [
+                    "on_bed",
+                    "beside_bed",
+                    "floor",
+                    "chair",
+                    "elsewhere",
+                    "not_visible",
+                ],
             },
-            "messages": [
+            "posture": {
+                "type": "STRING",
+                "enum": ["lying", "sitting", "standing", "walking", "unknown"],
+            },
+            "other_person_present": {"type": "BOOLEAN"},
+            "confidence": {"type": "NUMBER"},
+            "evidence": {"type": "STRING"},
+        }
+        payload = {
+            "contents": [
                 {
                     "role": "user",
-                    "content": prompt,
-                    "images": [
-                        base64.b64encode(frame.jpeg_bytes).decode("ascii")
-                        for frame in frames
+                    "parts": [
+                        *[
+                            {
+                                "inlineData": {
+                                    "mimeType": "image/jpeg",
+                                    "data": base64.b64encode(frame.jpeg_bytes).decode(
+                                        "ascii"
+                                    ),
+                                }
+                            }
+                            for frame in frames
+                        ],
+                        {"text": prompt},
                     ],
                 }
             ],
+            "generationConfig": {
+                "temperature": 0,
+                "responseMimeType": "application/json",
+                "responseSchema": {
+                    "type": "OBJECT",
+                    "properties": properties,
+                    "required": list(properties),
+                    "propertyOrdering": list(properties),
+                },
+            },
         }
+        endpoint = (
+            "https://generativelanguage.googleapis.com/v1beta/models/"
+            f"{self._model}:generateContent"
+        )
         request = Request(
-            f"{self.base_url}/api/chat",
+            endpoint,
             data=json.dumps(payload).encode("utf-8"),
-            headers={"Content-Type": "application/json"},
+            headers={
+                "Content-Type": "application/json",
+                "x-goog-api-key": api_key,
+            },
             method="POST",
         )
         try:
@@ -80,24 +139,31 @@ class OllamaVLMClient:
             details = error.read().decode("utf-8", errors="replace").strip()
             if len(details) > 1000:
                 details = f"{details[:1000]}…"
-            message = f"Ollama returned HTTP {error.code}"
+            message = f"Gemini returned HTTP {error.code}"
             if details:
                 message = f"{message}: {details}"
             raise VLMUnavailableError(message) from error
         except (URLError, TimeoutError, OSError, json.JSONDecodeError) as error:
             raise VLMUnavailableError(
-                f"Ollama request failed: {error}"
+                f"Gemini request failed: {error}"
             ) from error
 
         try:
-            content = response_data["message"]["content"]
-        except (KeyError, TypeError) as error:
+            content = response_data["candidates"][0]["content"]["parts"]
+        except (IndexError, KeyError, TypeError) as error:
             raise VLMUnavailableError(
-                "Ollama response did not contain message.content"
+                "Gemini response did not contain candidate content"
             ) from error
-        if not isinstance(content, str):
-            raise VLMUnavailableError("Ollama message.content was not text")
-        return content
+        if not isinstance(content, list):
+            raise VLMUnavailableError("Gemini candidate content was not a list")
+        text = "".join(
+            part["text"]
+            for part in content
+            if isinstance(part, dict) and isinstance(part.get("text"), str)
+        )
+        if not text:
+            raise VLMUnavailableError("Gemini candidate did not contain text")
+        return text
 
 
 def parse_and_validate_vlm_json(raw: str) -> dict[str, Any]:

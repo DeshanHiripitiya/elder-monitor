@@ -17,7 +17,7 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.agent_tools import MockVLM, vlm_describe_clip
 from src.frame_sampler import load_config
-from src.vlm import OllamaVLMClient
+from src.vlm import GeminiVLMClient
 
 
 def _time_seconds(value: str) -> float:
@@ -75,6 +75,11 @@ def main() -> None:
         action="store_true",
         help="Run plumbing checks only; mock responses are excluded from accuracy",
     )
+    parser.add_argument(
+        "--allow-cloud-upload",
+        action="store_true",
+        help="Explicitly allow sending patient video frames to the Gemini API",
+    )
     parser.add_argument("--overwrite", action="store_true")
     args = parser.parse_args()
 
@@ -118,28 +123,33 @@ def main() -> None:
         client = MockVLM()
         print("Using MockVLM. This run validates plumbing only, not model accuracy.")
     else:
-        if agent_config["vlm_provider"] != "ollama":
+        if agent_config["vlm_provider"] != "gemini":
             raise ValueError(
-                f"Unsupported configured local provider: {agent_config['vlm_provider']}"
+                f"Unsupported configured VLM provider: {agent_config['vlm_provider']}"
             )
-        client = OllamaVLMClient(
-            base_url=str(agent_config["vlm_base_url"]),
+        if not args.allow_cloud_upload:
+            parser.error(
+                "Gemini sends patient frames to Google's API. Review the privacy "
+                "implications and rerun with --allow-cloud-upload to proceed."
+            )
+        client = GeminiVLMClient(
             model=str(agent_config["vlm_model"]),
+            api_key_env=str(agent_config["vlm_api_key_env"]),
             timeout_sec=float(agent_config["vlm_timeout_sec"]),
             temperature=float(agent_config["vlm_temperature"]),
-            context_length=int(agent_config["vlm_context_length"]),
+            allow_cloud_upload=args.allow_cloud_upload,
         )
-        print(f"Local VLM: {agent_config['vlm_model']} at {agent_config['vlm_base_url']}")
-        print("Frames are sent only to the configured local Ollama endpoint.")
+        print(f"Gemini VLM: {client.model}")
+        print(
+            "Patient video frames will be sent to Google's Gemini API. "
+            "Do not proceed unless you have authorization to process this footage."
+        )
 
     results: list[dict[str, Any]] = []
     for window in windows:
         _verify_window_label(ground_truth, window)
         tags = list(window.get("tags", []))
-        question = (
-            "Identify the elderly patient and report their visible posture and "
-            f"location. Review tags: {', '.join(tags) if tags else 'standard posture'}."
-        )
+        question = "What are the elderly patient's posture and location?"
         described = vlm_describe_clip(
             float(window["start"]),
             float(window["end"]),

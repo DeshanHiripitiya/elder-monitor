@@ -1,6 +1,8 @@
 opencv-python
 ultralytics
 PyYAML
+python-dotenv
 pandas
 pyarrow
+matplotlib
 pytest

@@ -119,6 +119,42 @@ route frames toward `UNKNOWN`. If [`data/raw/gt.csv`](data/raw/gt.csv) is presen
 command also compares argmax states against its labeled time intervals and
 prints rough accuracy and a confusion matrix.
 
+## Evaluate state timing against ground truth
+
+Run the state-alignment evaluation after generating the raw scores, smoothed
+states, final timeline, and event outputs:
+
+```powershell
+.\.venv\Scripts\python.exe -m eval.run_all
+```
+
+The evaluator compares raw argmax, smoothed, and final timeline labels on the
+same one-second grid. It reports accuracy at zero offset and across prediction
+offsets from -5 to +5 seconds, plus per-mode confusion counts, in
+[`results/alignment.json`](results/alignment.json). A non-zero best offset also
+writes [`results/NOTES.md`](results/NOTES.md); treat it as a possible GT or
+clap-sync alignment issue and correct the annotation after reviewing the
+source, never shift predictions to improve the score. The command also reads
+the ground-truth event annotations and predicted event list; event scoring is
+separate from this state-grid timing check.
+
+The report includes strict accuracy, per-class precision/recall/F1, macro F1,
+UNKNOWN abstention coverage and selective accuracy, and accuracy after
+excluding samples within both 1 and 2 seconds of each ground-truth state
+transition. It saves a row-normalized, count-annotated confusion heatmap for
+each prediction mode as `results/confusion_matrix_<mode>.png`. The three
+largest timeline off-diagonal confusions are also summarized in the JSON
+report and printed by the command.
+
+The same run evaluates bed exits and returns by confirmed-time matching at
+5- and 10-second tolerances, and writes [`results/bed_event_metrics.md`](results/bed_event_metrics.md).
+It reports TP/FP/FN, precision, recall, F1, timing errors, and trap results
+separately for an annotation-derived reference state trace and the predicted
+timeline. The reference trace is synthesized from `gt_events.csv` event
+intervals and notes; it is not an independently frame-labeled reconstruction.
+The current event annotations contain only two exits, two returns, and three
+negative traps, so the metrics are small-sample evidence, not strong claims.
+
 ## Smooth states with Viterbi
 
 Frame-by-frame argmax labels can flicker. Viterbi smoothing finds the single
@@ -433,7 +469,7 @@ All thresholds and call budgets live under `agent` in
 [`config.yaml`](config.yaml); the same agent settings are available in
 [`config_demo.yaml`](config_demo.yaml). The target execution order is
 state-history lookup, pose-feature lookup, wider temporal context, then a
-budgeted local VLM call only when cheaper evidence has not resolved the case.
+budgeted Gemini VLM call only when cheaper evidence has not resolved the case.
 The case-routing loop and call-rate measurement are not yet connected, so no
 “8% of segments” call rate is claimed. Future evaluation should compute that
 percentage from actual routing and call records.
@@ -456,8 +492,8 @@ The four read-only agent tools are implemented in
   question, model, frame count, and polygon.
 
 The VLM call uses the provider-neutral `VLMClient` interface. `MockVLM` is
-available for tests, and the local Ollama client is implemented in
-[`src/vlm.py`](src/vlm.py). See the constrained prompt and real-video
+available for offline tests, and `GeminiVLMClient` is implemented in
+[`src/vlm.py`](src/vlm.py). See the cloud-upload warning and real-video
 evaluation below.
 
 Run the unit tests:
@@ -480,54 +516,63 @@ source video. Adjust the real-data window with `--start` and `--end`. It makes
 no external VLM request. Its first run writes a reusable mock-response entry
 under `.cache/agent_vlm/`.
 
-### Constrained local VLM and real-video evaluation
+### Gemini constrained VLM and real-video evaluation
 
-The local Ollama backend runs at temperature 0 and receives the fixed-camera
-frames in timestamp order. The prompt asks only about the elderly patient,
-instructs the model to ignore other people and avoid guessing, and requires
-the response fields `patient_visible`, `location`, `posture`,
-`other_person_present`, `confidence`, and `evidence`. The bed polygon is
-rendered in red and every frame carries its source timestamp.
+The configured provider is Gemini (`gemini-2.5-flash`), called through the
+Gemini REST API. It receives timestamped frames in order with the bed polygon
+drawn in red. The prompt asks only about the elderly patient, asks the model
+to ignore other people when describing posture/location, and requires exactly
+`patient_visible`, `location`, `posture`, `other_person_present`, `confidence`,
+and `evidence`. Temperature is fixed at zero, and Gemini structured output is
+requested with a JSON schema before the response is independently parsed and
+validated. Invalid JSON or schema is retried once; API and timeout failures
+become `vlm_unavailable`, while a second invalid response becomes
+`invalid_response`. Both return the safe unknown/zero-confidence fallback.
 
-The response is parsed and schema-validated. Invalid JSON or schema is retried
-once; if the retry is still invalid, the tool returns an `invalid_response`
-result with unknown posture and zero confidence. Connection, timeout, and
-local API errors return a `vlm_unavailable` tool result with the same safe
-unknown fallback. The agent can therefore continue without treating a VLM
-failure as a successful description.
+**Privacy:** Gemini is a cloud service. When enabled, the selected patient
+frames are transmitted to Google's Gemini API for processing. Do not use this
+with footage unless you have the required consent and authorization and have
+reviewed applicable privacy, retention, and organizational policies. The API
+key is read from the `GEMINI_API_KEY` environment variable; it is never stored
+in YAML or sent as a URL query parameter. The evaluator requires the explicit
+`--allow-cloud-upload` flag before it will send any frames. `--mock-vlm` makes
+no external API calls.
 
-`agent.vlm_context_length` controls Ollama's `num_ctx` request option. It is
-set to 32768 because the eight annotated frames can produce prompts larger
-than Ollama's default 4096-token context. Increase `agent.vlm_timeout_sec`
-when the local model needs more time to load or analyze the images. Both
-settings are configurable; larger contexts may require more system memory.
+Set the API key in the root `.env` file (it is git-ignored):
 
-This project uses local footage only with the local Ollama provider. Install
-Ollama separately, then download the configured vision model locally:
-
-```powershell
-ollama pull qwen2.5vl:7b
+```dotenv
+GEMINI_API_KEY=your_actual_gemini_api_key
 ```
 
-Start Ollama if it is not already running, then evaluate the ten fixed windows
-in [`scenarios/vlm_eval_windows.json`](scenarios/vlm_eval_windows.json):
+The Python client loads `.env` without overriding environment variables that
+are already set. Alternatively, set `GEMINI_API_KEY` in the process
+environment. Never commit or share the real key.
+
+Review the privacy authorization, then run the ten fixed windows in
+[`scenarios/vlm_eval_windows.json`](scenarios/vlm_eval_windows.json):
 
 ```powershell
-.\.venv\Scripts\python.exe tools\evaluate_vlm.py --overwrite
+.\.venv\Scripts\python.exe tools\evaluate_vlm.py --allow-cloud-upload --overwrite
 ```
 
-The evaluator verifies every expected posture label against the overlapping
-intervals in `data/raw/gt.csv`, reports the correct count and accuracy over
-successful real model responses, and writes per-window results to
-`data/processed/vlm_eval_results.json`. It also reports unavailable and
-invalid responses separately; those are not counted as model answers. Use
-`--mock-vlm` only to check data/frame plumbing—mock results are excluded from
-accuracy.
+The evaluator validates each expected posture against
+`data/raw/gt.csv`, scores only successful non-mock responses, and writes the
+per-window results to `data/processed/vlm_eval_results.json`. It reports
+unavailable and invalid responses separately; neither is counted as a model
+answer. The mock option is for checking data and report plumbing only.
 
-Two windows show the patient under a blanket. The supplied clip has no
-independently labeled naturally dim-light interval, so the tenth case
-brightness-reduces a real labeled frame to 45% for a **simulated low-light
-robustness check**. This is labeled as an augmentation, not claimed as
-naturally dim footage. The score evaluates posture against the state labels;
-location and identity remain qualitative outputs because `gt.csv` does not
-annotate those fields.
+The ten windows include blanket-covered lying examples and a 45%-brightness
+version of a labeled lying interval. The source clip has no independently
+labeled naturally dim-light interval, so that case is a simulated low-light
+robustness check. Posture is scored against state labels; location and identity
+remain qualitative because `gt.csv` does not annotate those fields.
+
+**Gemini posture accuracy has not been measured here.** Running the real
+evaluation uploads patient frames to Google's API and must only be done by an
+authorized operator with the required consent. Do not treat the ignored
+`data/processed/vlm_eval_results.json` from the earlier SmolVLM experiment as a
+Gemini score; all ten SmolVLM responses were invalid and therefore unscored.
+
+The previous local SmolVLM experiment returned invalid JSON on all ten windows,
+so its posture accuracy was not measurable. The local Ollama and SmolVLM
+inference code and the standalone SmolVLM smoke test have been removed.

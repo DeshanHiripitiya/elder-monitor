@@ -1,5 +1,5 @@
 {
-  "description": "Ten posture-labelled windows for a local VLM mini-evaluation. Posture labels come from data/raw/gt.csv. The final case is a brightness-reduced low-light robustness check, not naturally dim source footage.",
+  "description": "Ten posture-labelled windows for a Gemini VLM mini-evaluation. Posture labels come from data/raw/gt.csv. The final case is a brightness-reduced low-light robustness check, not naturally dim source footage.",
   "windows": [
     {
       "id": "posture-01-standing",

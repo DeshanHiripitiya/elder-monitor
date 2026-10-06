@@ -183,7 +183,7 @@ def test_vlm_returns_unavailable_tool_result_without_raising(tmp_path):
         def describe(self, frames, prompt):
             from src.vlm import VLMUnavailableError
 
-            raise VLMUnavailableError("local VLM server is unavailable")
+            raise VLMUnavailableError("configured VLM service is unavailable")
 
     result = vlm_describe_clip(
         0,
