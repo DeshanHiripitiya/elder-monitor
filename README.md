@@ -14,6 +14,40 @@ tools/                   command-line pipeline and validation scripts
 tests/                   automated tests
 ```
 
+## Architecture
+
+```mermaid
+flowchart TD
+    Config["config.yaml<br/>video, bed polygon, thresholds"] --> Sampling["Frame sampling"]
+    Video["data/raw/clip.mp4"] --> Sampling
+    Sampling --> Pose["YOLO pose detection<br/>+ ByteTrack"]
+    Pose --> RawPose["data/processed/raw_pose.parquet"]
+    RawPose --> Features["Normalized pose and bed features"]
+    Config --> Features
+    Features --> FeatureFile["data/processed/features.parquet"]
+    FeatureFile --> Scoring["Rule-based state scoring"]
+    Config --> Scoring
+    Scoring --> Scores["data/processed/state_scores.parquet"]
+    Scores --> Smooth["Viterbi temporal smoothing"]
+    Smooth --> Smoothed["data/processed/smoothed_states.parquet"]
+    Smoothed --> Timeline["Timeline segmentation"]
+    Timeline --> TimelineFile["data/processed/timeline.parquet<br/>timeline.txt"]
+    TimelineFile --> Events["Bed-exit / return detection"]
+    FeatureFile --> Events
+    Config --> Events
+    Events --> EventFile["data/processed/events.json"]
+    Events --> Decisions["Alert and monitor decisions"]
+    Decisions --> Summary["data/processed/summary.json"]
+
+    GT["data/raw/gt.csv<br/>gt_events.csv"] --> Evaluation["Evaluation"]
+    Scores --> Evaluation
+    Smoothed --> Evaluation
+    TimelineFile --> Evaluation
+    EventFile --> Evaluation
+    FeatureFile --> Evaluation
+    Evaluation --> Report["results/report.md<br/>metrics, confusion plots,<br/>duration and event scorecards"]
+```
+
 Clone the repository, create a virtual environment, and install dependencies:
 
 ```powershell
