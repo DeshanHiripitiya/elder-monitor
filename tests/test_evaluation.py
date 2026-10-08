@@ -7,6 +7,7 @@ from eval.run_all import (
     duration_summary,
     evaluate_mode,
     evaluate_event_mode,
+    find_mismatch_intervals,
     ground_truth_detector_segments,
     load_ground_truth,
     match_events,
@@ -42,6 +43,40 @@ def test_to_grid_rejects_overlapping_segments():
             ],
             duration=4,
         )
+
+
+def test_mismatch_intervals_merge_adjacent_errors_and_sort_by_duration():
+    truth = np.array(["A", "A", "B", "B", "C", "C", "D"])
+    predictions = np.array(["A", "X", "Y", "Y", "C", "Z", "D"])
+
+    intervals = find_mismatch_intervals(truth, predictions, step=0.5)
+
+    assert intervals == [
+        {
+            "start": 0.5,
+            "end": 2.0,
+            "duration": 1.5,
+            "samples": 3,
+            "state_pairs": [
+                {"ground_truth": "A", "prediction": "X", "samples": 1},
+                {"ground_truth": "B", "prediction": "Y", "samples": 2},
+            ],
+        },
+        {
+            "start": 2.5,
+            "end": 3.0,
+            "duration": 0.5,
+            "samples": 1,
+            "state_pairs": [
+                {"ground_truth": "C", "prediction": "Z", "samples": 1},
+            ],
+        },
+    ]
+
+
+def test_mismatch_intervals_reject_different_grid_lengths():
+    with pytest.raises(ValueError, match="matching lengths"):
+        find_mismatch_intervals(np.array(["A"]), np.array([]), step=1)
 
 
 def test_evaluate_mode_finds_known_positive_offset():

@@ -128,6 +128,11 @@ states, final timeline, and event outputs:
 .\.venv\Scripts\python.exe -m eval.run_all
 ```
 
+This single command writes the assembled scorecard, tables, confusion-matrix
+images, and available failure examples to
+[`results/report.md`](results/report.md), alongside the machine-readable and
+focused reports described below.
+
 The evaluator compares raw argmax, smoothed, and final timeline labels on the
 same one-second grid. It reports accuracy at zero offset and across prediction
 offsets from -5 to +5 seconds, plus per-mode confusion counts, in
@@ -154,6 +159,58 @@ timeline. The reference trace is synthesized from `gt_events.csv` event
 intervals and notes; it is not an independently frame-labeled reconstruction.
 The current event annotations contain only two exits, two returns, and three
 negative traps, so the metrics are small-sample evidence, not strong claims.
+
+## Ablation and failure examples
+
+The same evaluation run writes [`results/ablation.md`](results/ablation.md)
+and [`results/mismatch_intervals.csv`](results/mismatch_intervals.csv). The
+ablation includes raw argmax, Viterbi-smoothed, and final timeline results.
+VLM-only is marked unavailable until a separately authorized Gemini evaluation
+has actually run; the hybrid/agent row is not implemented while agent work is
+on hold. Existing prediction files do not record end-to-end inference runtime,
+so the table reports it as unavailable rather than substituting metric runtime.
+
+Export three representative local examples (state confusion, exit timing, and
+UNKNOWN abstention) after running the evaluator:
+
+```powershell
+.\.venv\Scripts\python.exe -m eval.export_failures
+```
+
+The exporter selects the examples from the measured predictions, ground truth,
+events, and pose features. It writes four-frame annotated strips, 10–20 second
+annotated clips, and [`results/failure_cases/case_summary.json`](results/failure_cases/case_summary.json).
+These clips contain the source video and are ignored by Git; review them locally
+before sharing. The summary records measured feature values and timestamps so
+failure explanations are evidence-based, not inferred from memory.
+
+### Measured failure cases
+
+These examples were selected from the prediction/GT mismatches and event timing
+results. The recorded features describe the cases but do not establish a
+causal explanation; the proposed fixes are hypotheses to test.
+
+1. **Standing read as walking (00:03–00:10, timeline).** GT was `STANDING`,
+   while the timeline predicted `WALKING` for 7.0 seconds. The recorded mean
+   speed was 0.185 and visibility was 0.563. The precise cause is not isolated;
+   inspect the motion feature and walking threshold on stationary-standing
+   examples before changing either. See the [annotated frame strip](results/failure_cases/standing_predicted_walking_frames.png)
+   and [15-second clip](results/failure_cases/standing_predicted_walking.mp4).
+2. **Premature bed-exit confirmation (02:54–03:15, timeline).** The predicted
+   event started at 174.6s and was confirmed at 180.8s, versus GT start/confirm
+   times of 180.0s/195.0s. Its confirmation was 14.2s early, outside the
+   10-second match tolerance, so it was scored as a miss; it is not linked to
+   an annotated negative trap. Nearby timeline errors include bed sitting and
+   standing being labeled as lying, and standing as walking. Test stronger
+   persistence or out-of-bed evidence before confirmation, while checking that
+   true exits are not delayed further. See the [annotated frame strip](results/failure_cases/early_bed_exit_confirmation_frames.png)
+   and [20-second clip](results/failure_cases/early_bed_exit_confirmation.mp4).
+3. **Raw argmax abstention during labeled lying (01:16.8–01:17.6).** Raw
+   argmax emitted `UNKNOWN` for 0.8s while GT was `LYING_IN_BED`. Mean visibility
+   was 0.336. Low visibility is a plausible contributor, not a proven cause;
+   review the confidence/visibility threshold against blanket and low-visibility
+   examples before relaxing it. See the [annotated frame strip](results/failure_cases/raw_argmax_unknown_abstention_frames.png)
+   and [15-second clip](results/failure_cases/raw_argmax_unknown_abstention.mp4).
 
 ## Smooth states with Viterbi
 

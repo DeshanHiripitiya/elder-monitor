@@ -11,3 +11,5 @@ data/processed/*
 __pycache__/
 *.py[cod]
 .pytest_cache/
+results/failure_cases/*.mp4
+results/failure_cases/*.png
